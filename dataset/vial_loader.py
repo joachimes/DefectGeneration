@@ -23,8 +23,6 @@ class VialLoader(Dataset):
             category = categories[category_name]
             # version = 'current_version' if 'hash' not in category else category['hash']
             temp = osp.join(data_path, category['origin'], f'CAM{camera}', category_name, category['hash'], category['split'])
-            if category_name != 'Good':
-                category['versions'] = [""]
             for version in category['versions']:
                 defect_key = category_name + f'_{version}' if version else category_name
                 data_path_dict[defect_key] = osp.join(temp, version)
