@@ -1,0 +1,32 @@
+training:
+  max_epochs: 20
+  batch_size: 32
+  lr: 1e-5
+  num_workers: 4
+
+model:
+  model_name: MixNMatch
+
+dataset:
+  data_path: /nn-seidenader-gentofte/Data
+  camera: 2
+  categories:
+    B:
+      origin: Synthetic
+      n_images: 2000
+      hash: v0.1 - beak - fc348f8
+      split: train
+      versions:
+        -
+    Good:
+      origin: Real
+      n_images: 2000
+      hash: ""
+      versions:
+        - A
+        - B
+      split: train
+      
+  augmentations:
+    -
+      
