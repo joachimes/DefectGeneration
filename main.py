@@ -3,7 +3,7 @@ from torch.cuda import is_available
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers.csv_logs import CSVLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
-from dataset.vial_loader import VialLoader
+from dataset.vial_loader import VialDataModule
 from models.train import LitTrainer
 
 import hydra 
@@ -14,9 +14,9 @@ def main(cfg: DictConfig) -> None:
     seed_everything(42)
     print(OmegaConf.to_yaml(cfg))
 
-
-    dm = VialLoader(**cfg['dataset'])
-
+    dm = VialDataModule(**cfg['dataset'])
+    batch = next(iter(dm.train_dataloader()))
+    out_dim = len(batch)
     return
 
 
