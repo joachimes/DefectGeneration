@@ -132,3 +132,6 @@ dmypy.json
 # Local stuff
 .vscode/
 outputs/
+data_utils/
+logs/
+tb_logs/
