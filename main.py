@@ -15,25 +15,27 @@ def main(cfg: DictConfig) -> None:
     seed_everything(42)
     print(OmegaConf.to_yaml(cfg))
 
+    log_folder = 'tb_logs'
+    model_name = f"{cfg['model']['model_name']}_CAM{cfg['dataset']['camera']}"
+    version = str(cfg['dataset']['batch_size'])+'_'+str(cfg['model']['max_epochs'])
+    
     dm = VialDataModule(**cfg['dataset'])
     category_level = 'num_classes' if 'num_classes' in cfg['model'] else 'num_defects'
     cfg['model'][category_level] = dm.__getattribute__(category_level)
     model = LitTrainer(**cfg['model'])
-    logger = TensorBoardLogger(f'tb_logs'
-                        , name=f"log_{cfg['model']['model_name']}"
-                        , version=str(cfg['dataset']['batch_size'])+'_'+str(cfg['model']['max_epochs']))
+    logger = TensorBoardLogger(log_folder, name=model_name, version=version)
 
     callbacks = []
     callbacks.append(EarlyStopping(patience=10, monitor='val_loss'))
-    callbacks.append(ModelCheckpoint(dirpath=osp.join('logs', f"log_{cfg['model']['model_name']}")
+    callbacks.append(ModelCheckpoint(dirpath=osp.join(log_folder, model_name, version)
                                     , monitor='val_loss'
                                     , filename='model'
                                     , verbose=True
-                                    , save_top_k=1
+                                    , save_top_k=2
                                     , mode='min'))
     trainer = Trainer(
         gpus=1 if is_available() else 0,
-        max_epochs=10,
+        max_epochs=cfg['model']['max_epochs'],
         logger=logger,
         callbacks=callbacks
     )

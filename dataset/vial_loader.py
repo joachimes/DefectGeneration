@@ -68,6 +68,8 @@ class VialLoader(Dataset):
                 if n_images > n_total:
                     raise Exception("Number of images requested greater than total number of images")
                 for version in versions:
+                    if n_images == 0:
+                        continue
                     img_list = [{'type': defect, 'path': path, 'category': self.categories[defect]} for path in versions[version]]
                     self.img_paths += random.sample(img_list, int(len(img_list) * (n_images / n_total)))
 
