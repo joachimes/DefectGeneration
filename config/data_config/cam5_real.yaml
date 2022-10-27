@@ -116,7 +116,7 @@ train:
       category: Good
       hash:
       - current_version
-      n_images: 28920
+      n_images: 28919
       split: train
       versions:
       - A

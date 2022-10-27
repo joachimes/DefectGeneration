@@ -1,7 +1,6 @@
 import os.path as osp
 from torch.cuda import is_available
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.loggers.csv_logs import CSVLogger
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from dataset.vial_loader import VialDataModule
@@ -14,19 +13,19 @@ from omegaconf import DictConfig, OmegaConf
 def main(cfg: DictConfig) -> None:
     seed_everything(42)
     print(OmegaConf.to_yaml(cfg))
-
+    print(cfg.dataset)
     log_folder = 'tb_logs'
-    model_name = f"{cfg['model']['model_name']}_CAM{cfg['dataset']['camera']}"
-    version = str(cfg['dataset']['batch_size'])+'_'+str(cfg['model']['max_epochs'])
+    model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
+    version = str(cfg.dataset.batch_size)+'_'+str(cfg.model.max_epochs)
     
-    dm = VialDataModule(**cfg['dataset'])
-    category_level = 'num_classes' if 'num_classes' in cfg['model'] else 'num_defects'
-    cfg['model'][category_level] = dm.__getattribute__(category_level)
-    model = LitTrainer(**cfg['model'])
+    dm = VialDataModule(**cfg.dataset)
+    category_level = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
+    cfg.model[category_level] = dm.__getattribute__(category_level)
+    model = LitTrainer(**cfg.model)
     logger = TensorBoardLogger(log_folder, name=model_name, version=version)
 
     callbacks = []
-    callbacks.append(EarlyStopping(patience=10, monitor='val_loss'))
+    callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor='val_loss'))
     callbacks.append(ModelCheckpoint(dirpath=osp.join(log_folder, model_name, version)
                                     , monitor='val_loss'
                                     , filename='model'
@@ -34,8 +33,9 @@ def main(cfg: DictConfig) -> None:
                                     , save_top_k=2
                                     , mode='min'))
     trainer = Trainer(
-        gpus=1 if is_available() else 0,
-        max_epochs=cfg['model']['max_epochs'],
+        accelerator="gpu",
+        devices=1 if is_available() else 0,
+        max_epochs=cfg.model.max_epochs,
         logger=logger,
         callbacks=callbacks
     )

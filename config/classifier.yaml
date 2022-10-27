@@ -1,18 +1,19 @@
 model:
   lr: 1e-5
+  patience: 10
   max_epochs: 100
   num_classes: None
   model_name: Efficientnet
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
-  camera: 3
+  camera: 6
   weighted_sampling: 1
-  num_workers: 4
-  batch_size: 64
+  num_workers: 1
+  batch_size: 4
   img_size: 224
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
-  dataset: config/data_config/cam3_real.yaml
+  dataset: config/data_config/cam6_real.yaml
   transform:
       
