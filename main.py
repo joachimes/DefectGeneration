@@ -16,7 +16,7 @@ def main(cfg: DictConfig) -> None:
     print(cfg.dataset)
     log_folder = 'tb_logs'
     model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
-    version = str(cfg.dataset.batch_size)+'_'+str(cfg.model.max_epochs)
+    version = str(cfg.dataset.dataset_type)+'_'+str(cfg.dataset.batch_size)+'_'+str(cfg.model.max_epochs)
     
     dm = VialDataModule(**cfg.dataset)
     category_level = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
@@ -37,7 +37,8 @@ def main(cfg: DictConfig) -> None:
         devices=1 if is_available() else 0,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
-        callbacks=callbacks
+        callbacks=callbacks,
+        # profiler='simple'
     )
     trainer.fit(model, datamodule=dm)
 

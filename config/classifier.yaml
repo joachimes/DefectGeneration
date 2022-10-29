@@ -9,11 +9,11 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 6
   weighted_sampling: 1
-  num_workers: 1
-  batch_size: 4
+  num_workers: 8
+  batch_size: 63
   img_size: 224
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
-  dataset: config/data_config/cam6_real.yaml
+  dataset_type: Real_Synthetic
   transform:
       

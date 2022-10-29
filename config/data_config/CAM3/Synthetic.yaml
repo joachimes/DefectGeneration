@@ -1,0 +1,11 @@
+test: {}
+train:
+  Good:
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 -main - b12d5c6
+      n_images: 5000
+      split: train
+      versions: []
+val: {}

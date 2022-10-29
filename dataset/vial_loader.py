@@ -36,7 +36,7 @@ class ImageTransform:
         return self.transform[setting](img)
 
 class VialLoader(Dataset):
-    def __init__(self, data_path, defects, camera, transform, setting='train', **kwargs) -> None:
+    def __init__(self, data_path, defects, camera, transform, setting='train', max_img_class=10_000, **kwargs) -> None:
         self.data_paths = self.__gen_data_path(data_path, defects, camera)
         self.transform = transform
         self.setting = setting
@@ -114,11 +114,12 @@ class VialLoader(Dataset):
         return WeightedRandomSampler(sample_weight, len(sample_weight))
 
 class VialDataModule(LightningDataModule):
-    def __init__(self, data_path, dataset, camera, transform, img_size, batch_size, num_workers, weighted_sampling, **kwargs) -> None:
+    def __init__(self, data_path, dataset_type, camera, transform, img_size, batch_size, num_workers, weighted_sampling, max_img_class=10_000, **kwargs) -> None:
         super().__init__()
         self.data_path = data_path
         # open yaml file
-        with open(dataset, 'r') as d:
+        data_yaml_path = osp.join('config', 'data_config', f'cam{camera}', dataset_type+'.yaml')
+        with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
         self.transform = transform if transform else ImageTransform(camera=camera, img_size=img_size)
         self.batch_size = batch_size

@@ -1,0 +1,435 @@
+test:
+  ChipS:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 55
+      split: test
+      versions:
+      - A
+      - C
+      - D
+      - E
+  ChipSh:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 82
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  CrackAbove:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 527
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 145
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  DPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 231
+      split: test
+      versions:
+      - A
+      - B
+  EV:
+    Real:
+      category: E2
+      hash:
+      - current_version
+      n_images: 240
+      split: test
+      versions:
+      - A
+  FMI:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 388
+      split: test
+      versions:
+      - A
+      - B
+  FMOV:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 161
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - F
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3960
+      split: test
+      versions:
+      - A
+  SSNPDCake:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 241
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+train:
+  ChipS:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 33
+      split: train
+      versions:
+      - A
+      - C
+      - D
+      - E
+    Synthetic:
+      category: C1
+      hash:
+      - v0.1 - ChipS - 42565ab
+      n_images: 1216
+      split: train
+      versions: []
+  ChipSh:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 50
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+    Synthetic:
+      category: C1
+      hash:
+      - v0.1 - ChipS - 4fd2dfa
+      n_images: 1255
+      split: train
+      versions: []
+  CrackAbove:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 628
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+    Synthetic:
+      category: C1
+      hash:
+      - version3
+      n_images: 8229
+      split: train
+      versions: []
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 183
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+    Synthetic:
+      category: C1
+      hash:
+      - v0.1 - Cracks - 6fd8655
+      - v0.1 - Cracks - f87d6ad
+      - v0.1 - Cracks - f897210
+      n_images: 5943
+      split: train
+      versions: []
+  DPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 282
+      split: train
+      versions:
+      - A
+      - B
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - ParticleSIdeCake - a1644ee
+      n_images: 1995
+      split: train
+      versions: []
+  EV:
+    Real:
+      category: E2
+      hash:
+      - current_version
+      n_images: 270
+      split: train
+      versions:
+      - A
+    Synthetic:
+      category: E2
+      hash:
+      - version4
+      n_images: 2000
+      split: train
+      versions: []
+  FMI:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 441
+      split: train
+      versions:
+      - A
+      - B
+    Synthetic:
+      category: D1
+      hash:
+      - version7
+      n_images: 4387
+      split: train
+      versions: []
+  FMOV:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 187
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - F
+    Synthetic:
+      category: C2
+      hash:
+      - v0.1 - FMOV - 3281bc4
+      n_images: 1496
+      split: train
+      versions: []
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 31470
+      split: train
+      versions:
+      - A
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 -main - b12d5c6
+      n_images: 5000
+      split: train
+      versions: []
+  SSNPDCake:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 250
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+    Synthetic:
+      category: C2
+      hash:
+      - v0.1 - SSNPDCake - 1d085ef
+      - v0.1 - SSNPDCake - 5dda230
+      - v0.1 - SSNPDCake - 9ea8e01
+      - v0.1 - SSNPDCake - a2b223f
+      n_images: 5253
+      split: train
+      versions: []
+val:
+  ChipS:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 0
+      split: val
+      versions:
+      - A
+      - C
+      - D
+      - E
+  ChipSh:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 7
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  CrackAbove:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 107
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 25
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  DPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 51
+      split: val
+      versions:
+      - A
+      - B
+  EV:
+    Real:
+      category: E2
+      hash:
+      - current_version
+      n_images: 60
+      split: val
+      versions:
+      - A
+  FMI:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 63
+      split: val
+      versions:
+      - A
+      - B
+  FMOV:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 31
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - F
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3930
+      split: val
+      versions:
+      - A
+  SSNPDCake:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 42
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
