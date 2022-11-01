@@ -1,3 +1,116 @@
-test: {}
-train: {}
-val: {}
+test:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 509
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 421
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3630
+      split: test
+      versions:
+      - A
+  SPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 358
+      split: test
+      versions:
+      - A
+      - B
+train:
+  ChipB:
+    Synthetic:
+      category: C1
+      hash:
+      - ChipB_no_snow
+      n_images: 93000
+      split: train
+      versions: []
+  CrackAtFD:
+    Synthetic:
+      category: C1
+      hash:
+      - v0.1 - Cracks - 42cfe736
+      - v0.1 - Cracks - 634abf7
+      - v0.1 - New - 42cfe736
+      n_images: 207861
+      split: train
+      versions: []
+  SPBotCake:
+    Synthetic:
+      category: D1
+      hash:
+      - version7
+      - version8
+      n_images: 89000
+      split: train
+      versions: []
+val:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 120
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 107
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3630
+      split: val
+      versions:
+      - A
+  SPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 60
+      split: val
+      versions:
+      - A
+      - B

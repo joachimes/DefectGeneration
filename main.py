@@ -14,19 +14,24 @@ def main(cfg: DictConfig) -> None:
     seed_everything(42)
     print(OmegaConf.to_yaml(cfg))
     print(cfg.dataset)
-    log_folder = 'tb_logs'
-    model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
-    version = str(cfg.dataset.dataset_type)+'_'+str(cfg.dataset.batch_size)+'_'+str(cfg.model.max_epochs)
     
     dm = VialDataModule(**cfg.dataset)
     category_level = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
     cfg.model[category_level] = dm.__getattribute__(category_level)
+
+    log_folder = 'tb_logs'
+    model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
+    version_hparams = ['dataset_type',category_level, 'batch_size', 'max_epochs']
+    get_first_letters = lambda hparam: ''.join([word[:3] for word in hparam.split('_')])
+    version_name = f"{'_'.join([get_first_letters(hp) for hp in version_hparams])}"
+    get_cfg_value = lambda x:  [cfg[cfg_index][x] for cfg_index in cfg if x in cfg[cfg_index]]
+    version = f"{'_'.join([str(get_cfg_value(x)[0]) for x in version_hparams])}"
     model = LitTrainer(**cfg.model)
-    logger = TensorBoardLogger(log_folder, name=model_name, version=version)
+    logger = TensorBoardLogger(log_folder, name=model_name, version=osp.join(version_name, version))
 
     callbacks = []
     callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor='val_loss'))
-    callbacks.append(ModelCheckpoint(dirpath=osp.join(log_folder, model_name, version)
+    callbacks.append(ModelCheckpoint(dirpath=osp.join(log_folder, model_name, version_name, version)
                                     , monitor='val_loss'
                                     , filename='model'
                                     , verbose=True

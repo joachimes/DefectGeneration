@@ -138,11 +138,11 @@ class VialDataModule(LightningDataModule):
 
 
     def train_dataloader(self):
-        return DataLoader(self.vial_loader['train'], batch_size=self.batch_size, num_workers=self.num_workers, sampler=self.sampler, pin_memory=True)
+        return DataLoader(self.vial_loader['train'], batch_size=self.batch_size, num_workers=self.num_workers, sampler=self.sampler, persistent_workers=True, pin_memory=True)
     
 
     def val_dataloader(self):
-        return DataLoader(self.vial_loader['val'], batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False)
+        return DataLoader(self.vial_loader['val'], batch_size=self.batch_size, num_workers=self.num_workers, shuffle=False, persistent_workers=True, pin_memory=True)
     
     
     def test_dataloader(self):
