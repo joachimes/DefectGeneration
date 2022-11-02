@@ -1,10 +1,10 @@
 from pytorch_lightning import LightningModule
-from models import Efficientnet
+from models import Efficientnet, DiffusionNet
 
 class LitTrainer(LightningModule):
     def __init__(self, model_name='Efficientnet', lr=1e-3, weight_decay=None, **kwargs) -> None:
         super(LitTrainer, self).__init__()
-        accepted_models = [Efficientnet.__name__] # Extendable
+        accepted_models = [Efficientnet.__name__, DiffusionNet.__name__] # Extendable
         assert model_name in accepted_models, 'Model not supported' 
         self.model_module = eval(model_name)(**kwargs)
         self.lr = lr
@@ -42,7 +42,7 @@ class LitTrainer(LightningModule):
 
 
     def test_epoch_end(self, outputs):
-        results = self.model_module.test_epoch_end(outputs)
+        results = self.model_module.testing_end(outputs)
         for result in results:
             self.logger.experiment.add_scalar(result, results[result],self.current_epoch)
 

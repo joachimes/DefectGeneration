@@ -1,0 +1,30 @@
+test:
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 4020
+      split: test
+      versions:
+      - A
+train:
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 31980
+      split: train
+      versions:
+      - A
+val:
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3990
+      split: val
+      versions:
+      - A

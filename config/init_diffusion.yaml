@@ -1,0 +1,19 @@
+model:
+  lr: 1e-5
+  patience: 10
+  max_epochs: 100
+  num_classes: None
+  model_name: DiffusionNet
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 3
+  weighted_sampling: 0
+  num_workers: 8
+  batch_size: 1
+  img_size: 64
+  mean: [0.485, 0.456, 0.406]
+  std: [0.229, 0.224, 0.225]
+  dataset_type: Real_Good
+  transform:
+      

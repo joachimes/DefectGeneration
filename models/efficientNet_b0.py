@@ -55,19 +55,19 @@ class Efficientnet(LightningModule):
 
     def val_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        avg_acc = torch.FloatTensor([x['val_acc'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
         res = {'val_avg_loss': avg_loss, 'val_avg_acc': avg_acc}
         return res
 
 
-    def test_step(self, batch, batch_idx):
+    def testing_step(self, batch, batch_idx):
         res = self.train_step(batch, batch_idx)
         return {'test_loss': res['loss'], 'test_acc': res['corrects']}
 
 
-    def test_epoch_end(self, outputs):
+    def testing_end(self, outputs):
         avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
-        avg_acc = torch.FloatTensor([x['test_acc'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['test_acc'] for x in outputs]).mean()
         res = {'test_avg_loss': avg_loss, 'test_avg_acc': avg_acc}
         return res
 
