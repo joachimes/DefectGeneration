@@ -1,11 +1,11 @@
 from functools import partial
-
+import os.path as osp
 import torch
 from torch import nn
 from torchvision.utils import save_image
 from torch.optim import Adam
 from pytorch_lightning import LightningModule
-
+import numpy as np
 from models.utils import *
 
 class Unet(LightningModule):
@@ -20,6 +20,7 @@ class Unet(LightningModule):
         resnet_block_groups=8,
         use_convnext=True,
         convnext_mult=2,
+        **kwargs,
     ):
         super().__init__()
 
@@ -125,11 +126,33 @@ class Unet(LightningModule):
 
 
 class DiffusionNet(LightningModule):
-    def __init__(self, img_size, channels,  **kwargs) -> None:
+    def __init__(self, img_size, channels, timesteps=200, batch_size=8, **kwargs) -> None:
         super(DiffusionNet, self).__init__()
         self.channels = channels
         self.img_size = img_size
+        self.timesteps = timesteps
+        self.batch_size = batch_size
+        self.noise_schedule(self.timesteps)
         self.model = Unet(img_size=img_size, channels=channels, **kwargs)
+
+    def noise_schedule(self, timesteps=200):
+
+        # define beta schedule
+        self.betas = linear_beta_schedule(timesteps=timesteps)
+
+        # define alphas 
+        alphas = 1. - self.betas
+        alphas_cumprod = torch.cumprod(alphas, axis=0)
+        alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
+        self.sqrt_recip_alphas = torch.sqrt(1.0 / alphas)
+
+        # calculations for diffusion q(x_t | x_{t-1}) and others
+        self.sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
+        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
+
+        # calculations for posterior q(x_{t-1} | x_t, x_0)
+        self.posterior_variance = self.betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
+
 
     def p_losses(self, x_start, t, noise=None, loss_type="l1"):
         if noise is None:
@@ -149,41 +172,13 @@ class DiffusionNet(LightningModule):
 
         return loss
 
-    def noise_schedule(self, timesteps=200):
-        self.timesteps = timesteps
-
-        # define beta schedule
-        self.betas = linear_beta_schedule(timesteps=timesteps)
-
-        # define alphas 
-        alphas = 1. - self.betas
-        alphas_cumprod = torch.cumprod(alphas, axis=0)
-        alphas_cumprod_prev = F.pad(alphas_cumprod[:-1], (1, 0), value=1.0)
-        self.sqrt_recip_alphas = torch.sqrt(1.0 / alphas)
-
-        # calculations for diffusion q(x_t | x_{t-1}) and others
-        self.sqrt_alphas_cumprod = torch.sqrt(alphas_cumprod)
-        self.sqrt_one_minus_alphas_cumprod = torch.sqrt(1. - alphas_cumprod)
-
-        # calculations for posterior q(x_{t-1} | x_t, x_0)
-        self.posterior_variance = self.betas * (1. - alphas_cumprod_prev) / (1. - alphas_cumprod)
 
     def extract(self, a, t, x_shape):
         batch_size = t.shape[0]
         out = a.gather(-1, t.cpu())
-        return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(t.device)
+        return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(self.device)
     
 
-    def reverse_transform(self, img):
-        from torchvision.transforms import Compose, ToTensor, Lambda, ToPILImage, CenterCrop, Resize
-        import numpy as np
-        return Compose([
-            Lambda(lambda t: (t + 1) / 2),
-            Lambda(lambda t: t.permute(1, 2, 0)), # CHW to HWC
-            Lambda(lambda t: t * 255.),
-            Lambda(lambda t: t.numpy().astype(np.uint8)),
-            ToPILImage(),
-        ])(img)
     # forward diffusion (using the nice property)
     def q_sample(self, x_start, t, noise=None):
         if noise is None:
@@ -196,14 +191,6 @@ class DiffusionNet(LightningModule):
 
         return sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumprod_t * noise
     
-    def get_noisy_image(self, x_start, t):
-        # add noise
-        x_noisy = self.q_sample(x_start, t=t)
-
-        # turn back into PIL image
-        noisy_image = self.reverse_transform(x_noisy.squeeze())
-
-        return noisy_image
 
     @torch.no_grad()
     def p_sample(self, model, x, t, t_index):
@@ -230,17 +217,15 @@ class DiffusionNet(LightningModule):
     # Algorithm 2 (including returning all images)
     @torch.no_grad()
     def p_sample_loop(self, model, shape):
-        device = next(model.parameters()).device
-
         b = shape[0]
         # start from pure noise (for each example in the batch)
-        img = torch.randn(shape, device=device)
+        img = torch.randn(shape, device=self.device)
         imgs = []
 
         for i in tqdm(reversed(range(0, self.timesteps)), desc='sampling loop time step', total=self.timesteps):
-            img = self.p_sample(model, img, torch.full((b,), i, device=device, dtype=torch.long), i)
-            imgs.append(img.cpu().numpy())
-        return imgs
+            img = self.p_sample(model, img, torch.full((b,), i, device=self.device, dtype=torch.long), i)
+            imgs.append(img.permute(0,2,3,1).cpu().numpy())
+        return torch.FloatTensor(imgs)
 
     @torch.no_grad()
     def sample(self, model, image_size, batch_size=16, channels=3):
@@ -249,8 +234,9 @@ class DiffusionNet(LightningModule):
 
 
     def train_step(self, batch, batch_idx):
-        t = torch.randint(0, self.timesteps, (batch.shape[0],))
-        loss = self.p_losses(batch, t, loss_type="huber")
+        batch_imgs, *_ = batch
+        t = torch.randint(0, self.timesteps, (batch_imgs.shape[0],), device=self.device)
+        loss = self.p_losses(batch_imgs, t, loss_type="huber")
 
         return {'loss': loss}
     
@@ -269,21 +255,8 @@ class DiffusionNet(LightningModule):
     def val_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         res = {'val_avg_loss': avg_loss}
-        milestone = self.current_epoch
-        batches = self.num_to_groups(4, batch_size)
-        all_images_list = list(map(lambda n: self.sample(self.model, img_size, batch_size=n, channels=channels), batches))
-        all_images = torch.cat(all_images_list, dim=0)
-        all_images = (all_images + 1) * 0.5
-        save_image(all_images, str(results_folder / f'sample-{milestone}.png'), nrow = 6)
+        self.log_img()
         return res
-
-    def num_to_groups(self, num, divisor):
-        groups = num // divisor
-        remainder = num % divisor
-        arr = [divisor] * groups
-        if remainder > 0:
-            arr.append(remainder)
-        return arr
 
     def testing_step(self, batch, batch_idx):
         res = self.train_step(batch, batch_idx)
@@ -299,7 +272,22 @@ class DiffusionNet(LightningModule):
     def optimizer(self, parameters, lr, weight_decay):
         return Adam(parameters, lr=lr, weight_decay=weight_decay)
             # save generated images
-        
+
+    def log_img(self):        
+        milestone = self.current_epoch
+        batches = self.num_to_groups(4, self.batch_size)
+        all_images_list = list(map(lambda n: self.sample(self.model, self.img_size, batch_size=n, channels=self.channels), batches))
+        all_images = torch.cat(all_images_list, dim=0)
+        all_images = (all_images + 1) * 0.5
+        save_image(all_images, str(osp.join(self.logger.save_dir, self.logger.version, f'sample-{milestone}.png')), nrow = 6)
+
+    def num_to_groups(self, num, divisor):
+        groups = num // divisor
+        remainder = num % divisor
+        arr = [divisor] * groups
+        if remainder > 0:
+            arr.append(remainder)
+        return arr
 
 
 

@@ -1,3 +1,8 @@
+'''
+This code comes from the blog post "The Annotated Diffusion Model"
+By Niels Rogge & Kashif Rasul
+https://huggingface.co/blog/annotated-diffusion
+'''
 import math
 from inspect import isfunction
 
@@ -86,8 +91,8 @@ class ResnetBlock(nn.Module):
 
         if exists(self.mlp) and exists(time_emb):
             time_emb = self.mlp(time_emb)
-            h = time_emb[:,:,None,None] + h
-            # h = rearrange(time_emb, "b c -> b c 1 1") + h
+            # h = time_emb[:,:,None,None] + h
+            h = rearrange(time_emb, "b c -> b c 1 1") + h
 
         h = self.block2(h)
         return h + self.res_conv(x)
@@ -120,8 +125,8 @@ class ConvNextBlock(nn.Module):
 
         if exists(self.mlp) and exists(time_emb):
             condition = self.mlp(time_emb)
-            h = h + condition[:,:,None,None]
-            # h = h + rearrange(condition, "b c -> b c 1 1")
+            # h = h + condition[:,:,None,None]
+            h = h + rearrange(condition, "b c -> b c 1 1")
 
         h = self.net(h)
         return h + self.res_conv(x)
