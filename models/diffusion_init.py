@@ -2,7 +2,7 @@ from functools import partial
 import os.path as osp
 import torch
 from torch import nn
-from torchvision.utils import save_image
+from torchvision.utils import  make_grid
 from torch.optim import Adam
 from pytorch_lightning import LightningModule
 import numpy as np
@@ -190,47 +190,144 @@ class DiffusionNet(LightningModule):
         )
 
         return sqrt_alphas_cumprod_t * x_start + sqrt_one_minus_alphas_cumprod_t * noise
-    
 
-    @torch.no_grad()
-    def p_sample(self, model, x, t, t_index):
+    # # Algorithm 2 (including returning all images)
+    # @torch.no_grad()
+    # def p_sample_loop(self, model, shape):
+    #     b = shape[0]
+    #     # start from pure noise (for each example in the batch)
+    #     img = torch.randn(shape, device=self.device)
+    #     imgs = []
+
+    #     for i in tqdm(reversed(range(0, self.timesteps)), desc='sampling loop time step', total=self.timesteps):
+    #         img = self.p_sample(model, img, torch.full((b,), i, device=self.device, dtype=torch.long), i)
+    #         imgs.append(img.permute(0,2,3,1).cpu().numpy())
+    #     return torch.FloatTensor(imgs)
+
+    # @torch.no_grad()
+    # def sample(self, model, image_size, batch_size=16, channels=3):
+    #     return self.p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))
+    # @torch.no_grad()
+    def p_mean_variance(self, x, t, clip_denoised, return_pred_x0):
+        model_output = self.model(x, t)
+
+        # # Learned or fixed variance?
+        # if self.model_var_type == 'learned':
+        #     model_output, log_var = torch.split(model_output, 2, dim=-1)
+        #     var                   = torch.exp(log_var)
+
+        # elif self.model_var_type in ['fixedsmall', 'fixedlarge']:
+
+        #     # below: only log_variance is used in the KL computations
+        #     var, log_var = {
+        #         # for 'fixedlarge', we set the initial (log-)variance like so to get a better decoder log likelihood
+        #         'fixedlarge': (self.betas, torch.log(torch.cat((self.posterior_variance[1].view(1, 1),
+        #                                                         self.betas[1:].view(-1, 1)), 0)).view(-1)),
+        #         'fixedsmall': (self.posterior_variance, self.posterior_log_variance_clipped),
+        #     }[self.model_var_type]
+
+        #     var     = self.extract(var, t, x.shape) * torch.ones_like(x)
+        #     log_var = self.extract(log_var, t, x.shape) * torch.ones_like(x)
+        # else:
+        #     raise NotImplementedError(self.model_var_type)
+
+        var = None
+        log_var = None
+        # Mean parameterization
+        _maybe_clip = lambda x_: (x_.clamp(min=-1, max=1) if clip_denoised else x_)
         betas_t = self.extract(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.extract(
             self.sqrt_one_minus_alphas_cumprod, t, x.shape
         )
         sqrt_recip_alphas_t = self.extract(self.sqrt_recip_alphas, t, x.shape)
-        
-        # Equation 11 in the paper
+ 
+        pred_x0 = _maybe_clip(model_output)
+         # Equation 11 in the paper
         # Use our model (noise predictor) to predict the mean
-        model_mean = sqrt_recip_alphas_t * (
-            x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+        mean = sqrt_recip_alphas_t * (
+            x - betas_t * pred_x0 / sqrt_one_minus_alphas_cumprod_t
         )
-
-        if t_index == 0:
-            return model_mean
-        else:
+        
+        if t[0] != 0:
             posterior_variance_t = self.extract(self.posterior_variance, t, x.shape)
             noise = torch.randn_like(x)
             # Algorithm 2 line 4:
-            return model_mean + torch.sqrt(posterior_variance_t) * noise 
+            mean += torch.sqrt(posterior_variance_t) * noise 
+        
+        if return_pred_x0:
+            return mean, var, log_var, pred_x0
+        else:
+            return mean, var, log_var, None
 
-    # Algorithm 2 (including returning all images)
+    # def p_sample(self, model, x, t, t_index):
+    #     betas_t = self.extract(self.betas, t, x.shape)
+    #     sqrt_one_minus_alphas_cumprod_t = self.extract(
+    #         self.sqrt_one_minus_alphas_cumprod, t, x.shape
+    #     )
+    #     sqrt_recip_alphas_t = self.extract(self.sqrt_recip_alphas, t, x.shape)
+        
+    #     # Equation 11 in the paper
+    #     # Use our model (noise predictor) to predict the mean
+    #     model_mean = sqrt_recip_alphas_t * (
+    #         x - betas_t * model(x, t) / sqrt_one_minus_alphas_cumprod_t
+    #     )
+    #     if t_index == 0:
+    #         return model_mean
+    #     else:
+    #         posterior_variance_t = self.extract(self.posterior_variance, t, x.shape)
+    #         noise = torch.randn_like(x)
+    #         # Algorithm 2 line 4:
+    #         return model_mean + torch.sqrt(posterior_variance_t) * noise 
+
+    
+
     @torch.no_grad()
-    def p_sample_loop(self, model, shape):
-        b = shape[0]
-        # start from pure noise (for each example in the batch)
-        img = torch.randn(shape, device=self.device)
-        imgs = []
+    def p_sample(self, x, t, noise_fn, clip_denoised=True, return_pred_x0=False):
 
-        for i in tqdm(reversed(range(0, self.timesteps)), desc='sampling loop time step', total=self.timesteps):
-            img = self.p_sample(model, img, torch.full((b,), i, device=self.device, dtype=torch.long), i)
-            imgs.append(img.permute(0,2,3,1).cpu().numpy())
-        return torch.FloatTensor(imgs)
+        mean, _, log_var, pred_x0 = self.p_mean_variance( x, t, clip_denoised, return_pred_x0=True)
+        noise                     = noise_fn(x.shape, dtype=x.dtype).to(x.device)
+
+        # shape        = [x.shape[0]] + [1] * (x.ndim - 1)
+        # nonzero_mask = (1 - (t == 0).type(torch.float32)).view(*shape).to(x.device)
+        # sample       = mean + nonzero_mask * torch.exp(0.5 * log_var) * noise
+
+        return (mean, pred_x0) if return_pred_x0 else mean
+        
+    
+    @torch.no_grad()
+    def p_sample_loop_progressive(self, shape, noise_fn=torch.randn, include_x0_pred_freq=50):
+
+        img = noise_fn(shape, dtype=torch.float32, device=self.device)
+
+        num_recorded_x0_pred = self.timesteps // include_x0_pred_freq
+        x0_preds_            = torch.zeros((shape[0], num_recorded_x0_pred, *shape[1:]), dtype=torch.float32, device=self.device)
+
+        for i in reversed(range(self.timesteps)):
+
+            # Sample p(x_{t-1} | x_t) as usual
+            img, pred_x0 = self.p_sample(x=img,
+                                         t=torch.full((shape[0],), i, dtype=torch.int64, device=self.device),
+                                         noise_fn=noise_fn,
+                                         return_pred_x0=True)
+
+            # Keep track of prediction of x0
+            insert_mask = np.floor(i // include_x0_pred_freq) == torch.arange(num_recorded_x0_pred,
+                                                                              dtype=torch.int32,
+                                                                              device=self.device)
+
+            insert_mask = insert_mask.to(torch.float32).view(1, num_recorded_x0_pred, *([1] * len(shape[1:])))
+            x0_preds_   = insert_mask * pred_x0[:, None, ...] + (1. - insert_mask) * x0_preds_
+
+        return img, x0_preds_
 
     @torch.no_grad()
-    def sample(self, model, image_size, batch_size=16, channels=3):
-        return self.p_sample_loop(model, shape=(batch_size, channels, image_size, image_size))
-
+    def progressive_samples_fn(self, shape, include_x0_pred_freq=50):
+        samples, progressive_samples = self.p_sample_loop_progressive(
+            shape=shape,
+            noise_fn=torch.randn,
+            include_x0_pred_freq=include_x0_pred_freq
+        )
+        return {'samples': (samples + 1)/2, 'progressive_samples': (progressive_samples + 1)/2}
 
 
     def train_step(self, batch, batch_idx):
@@ -271,15 +368,19 @@ class DiffusionNet(LightningModule):
 
     def optimizer(self, parameters, lr, weight_decay):
         return Adam(parameters, lr=lr, weight_decay=weight_decay)
-            # save generated images
 
-    def log_img(self):        
-        milestone = self.current_epoch
-        batches = self.num_to_groups(4, self.batch_size)
-        all_images_list = list(map(lambda n: self.sample(self.model, self.img_size, batch_size=n, channels=self.channels), batches))
-        all_images = torch.cat(all_images_list, dim=0)
-        all_images = (all_images + 1) * 0.5
-        save_image(all_images, str(osp.join(self.logger.save_dir, self.logger.version, f'sample-{milestone}.png')), nrow = 6)
+
+    def log_img(self):
+        
+        shape  = (16, 3, self.img_size, self.img_size)
+        sample = self.progressive_samples_fn(shape)
+
+        grid = make_grid(sample['samples'], nrow=4)
+        self.logger.experiment.add_image(f'generated_images', grid, self.current_epoch)
+
+        grid = make_grid(sample['progressive_samples'].reshape(-1, 3, self.img_size, self.img_size), nrow=20)
+        self.logger.experiment.add_image(f'progressive_generated_images', grid, self.current_epoch)
+    
 
     def num_to_groups(self, num, divisor):
         groups = num // divisor

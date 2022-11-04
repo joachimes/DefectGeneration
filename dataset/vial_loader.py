@@ -34,7 +34,28 @@ class ImageTransform:
 
     def __call__(self, img, setting='train'):
         return self.transform[setting](img)
+class GenerativeTransform:
+    def __init__(self, camera, img_size=128, mean=[0.5, 0.5, 0.5], std=[0.25, 0.25, 0.25] ):
+        self.transform = {
+            'train': transforms.Compose([
+                transforms.Resize((img_size,img_size)),
+                transforms.CenterCrop(img_size),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ]),
+            'val': transforms.Compose([
+                transforms.Resize((img_size, img_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ]),
+            'test': transforms.Compose([
+                transforms.Resize((img_size, img_size)),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=mean, std=std)
+            ])}
 
+    def __call__(self, img, setting='train'):
+        return self.transform[setting](img)
 class VialLoader(Dataset):
     def __init__(self, data_path, defects, camera, transform, setting='train', max_img_class=10_000, **kwargs) -> None:
         self.data_paths = self.__gen_data_path(data_path, defects, camera)
@@ -121,7 +142,7 @@ class VialDataModule(LightningDataModule):
         data_yaml_path = osp.join('config', 'data_config', f'cam{camera}', dataset_type+'.yaml')
         with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
-        self.transform = transform if transform else ImageTransform(camera=camera, img_size=img_size)
+        self.transform = transform if transform else GenerativeTransform(camera=camera, img_size=img_size)
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.vial_loader = {}
