@@ -138,7 +138,7 @@ class DiffusionNet(LightningModule):
     def noise_schedule(self, timesteps=200):
 
         # define beta schedule
-        self.betas = linear_beta_schedule(timesteps=timesteps)
+        self.betas = cosine_beta_schedule(timesteps=timesteps)
 
         # define alphas 
         alphas = 1. - self.betas

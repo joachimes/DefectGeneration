@@ -35,7 +35,7 @@ def main(cfg: DictConfig) -> None:
                                     , monitor='val_loss'
                                     , filename='model'
                                     , verbose=True
-                                    , save_top_k=2
+                                    , save_top_k=cfg.model.save_top_k if 'save_top_k' in cfg.model else 1
                                     , mode='min'))
     trainer = Trainer(
         accelerator="gpu",

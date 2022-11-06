@@ -1,22 +1,22 @@
 model:
-  lr: 1e-5
-  patience: 10
-  max_epochs: 100
+  lr: 1e-3
+  patience: 100
+  max_epochs: 304
   num_classes: None
   model_name: DiffusionNet
-  dim_mults: [1,2, 4]
-  img_size: 128
+  dim_mults: [1, 2, 4]
+  img_size: 32
   channels: 3
   timesteps: 200
-  batch_size: 2
+  batch_size: 128
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/Data
   camera: 3
   weighted_sampling: 0
-  num_workers: 8
-  batch_size: 4
-  img_size: 128
+  num_workers: 16
+  batch_size: 128
+  img_size: 32
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
   dataset_type: Real_Good
