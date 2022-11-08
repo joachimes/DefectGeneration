@@ -1,15 +1,29 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from torch.optim import Adam
 from torchvision import models
 from pytorch_lightning import LightningModule
+import torchmetrics as tm
+
+from models.utils import log_metrics
 
 class Efficientnet(LightningModule):
     def __init__(self, num_classes=14, feature_extract=False, **kwargs) -> None:
         super(Efficientnet, self).__init__()
         self.loss = nn.CrossEntropyLoss()
         self.model, self.input_size = self.initialize_model(num_classes, feature_extract)
+
+        # Test Metrics
+        self.test_acc = tm.Accuracy(num_classes=num_classes, multiclass=True, average='macro', )
+        self.test_f1 = tm.F1Score(num_classes=num_classes, multiclass=True, average='macro', )
+        self.test_auc = tm.AUROC(num_classes=num_classes, multiclass=True, average='macro', )
+        self.test_prec = tm.Precision(num_classes=num_classes, multiclass=True, average='macro', )
+        self.test_recall = tm.Recall(num_classes=num_classes, multiclass=True, average='macro', )
+
+        self.conf_matrix = tm.ConfusionMatrix(num_classes=num_classes)
+        self.save_hyperparameters(ignore=[
+            'feature_extract'
+        ])
 
 
     def initialize_model(self, num_classes, feature_extract, use_pretrained=True):
@@ -29,46 +43,42 @@ class Efficientnet(LightningModule):
                 param.requires_grad = False
 
 
-    def train_step(self, batch, batch_idx):
+    def _common_step(self, batch, batch_nb):
         inputs, category_labels, _ = batch
 
         outputs = self.model(inputs)
         loss = self.loss(outputs, category_labels)
 
-        _, preds = torch.max(outputs, 1)
-        corrects = torch.sum(preds == category_labels.data) / len(batch[0])
+        # return loss, outputs, category_labels
+        return {'loss': loss, 'outputs': outputs, 'labels': category_labels}
 
-        return {'loss': loss, 'corrects': corrects}
+    def train_step(self, batch, batch_idx):
+        return self._common_step(batch, batch_idx)
 
 
-    def train_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        avg_acc = torch.stack([x['corrects'] for x in outputs]).mean()
-        res = {'train_avg_loss': avg_loss, 'train_avg_acc': avg_acc}
+    def train_epoch_end(self, epoch_output):
+        stage = 'train'
+        res = log_metrics(epoch_output, stage)
         return res
-        
+
 
     def val_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'val_loss': res['loss'], 'val_acc': res['corrects']}
+        return self._common_step(batch, batch_idx)
 
 
     def val_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        avg_acc = torch.stack([x['val_acc'] for x in outputs]).mean()
-        res = {'val_avg_loss': avg_loss, 'val_avg_acc': avg_acc}
+        stage = "val"
+        res = log_metrics(outputs, stage)
         return res
 
 
     def testing_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'test_loss': res['loss'], 'test_acc': res['corrects']}
+        return self._common_step(batch, batch_idx)
 
 
     def testing_end(self, outputs):
-        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
-        avg_acc = torch.stack([x['test_acc'] for x in outputs]).mean()
-        res = {'test_avg_loss': avg_loss, 'test_avg_acc': avg_acc}
+        stage = "test"
+        res = log_metrics(outputs, stage)
         return res
 
 

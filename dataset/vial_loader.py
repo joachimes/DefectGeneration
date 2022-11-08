@@ -142,7 +142,7 @@ class VialDataModule(LightningDataModule):
         data_yaml_path = osp.join('config', 'data_config', f'cam{camera}', dataset_type+'.yaml')
         with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
-        self.transform = transform if transform else GenerativeTransform(img_size=img_size)
+        self.transform = transform if transform else ImageTransform(img_size=img_size)
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.vial_loader = {}
