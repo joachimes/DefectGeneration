@@ -29,7 +29,6 @@ def confusion_matrix_to_img(class_names, computed_confusion):
 
     fig, ax = plt.subplots(figsize=(10, 5))
     fig.subplots_adjust(left=0.05, right=.65)
-    # df_cm.style.background_gradient(cmap='coolwarm')
     sn.set(font_scale=1.2)
     sn.heatmap(df_cm, annot=True, annot_kws={"size": 16}, fmt='d', ax=ax)
     ax.legend(
@@ -45,6 +44,8 @@ def confusion_matrix_to_img(class_names, computed_confusion):
     buf.seek(0)
     img = Image.open(buf)
     img = transforms.ToTensor()(img)
+    #close figure
+    plt.close()
     return img
 
 
@@ -69,7 +70,6 @@ def log_metrics(self, epoch_output, stage='val'):
     if stage != 'train':
         self.test_acc(preds, labels.to(torch.uint8))
         confusion_matrix_log(self, preds, labels, stage)
-        confusion_matrix_log(self, preds, labels, 'Bean_Machine')
         self.test_prec(preds, labels.to(torch.uint8))
         self.test_recall(preds, labels.to(torch.uint8))
         self.test_f1(preds, labels.to(torch.uint8))
