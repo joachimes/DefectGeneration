@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 from torch.optim import Adam
 from torchvision import models
@@ -8,19 +7,21 @@ import torchmetrics as tm
 from models.utils import log_metrics
 
 class Efficientnet(LightningModule):
-    def __init__(self, num_classes=14, feature_extract=False, **kwargs) -> None:
+    def __init__(self, num_classes=14, class_names=[], feature_extract=False, master_log=None, **kwargs) -> None:
         super(Efficientnet, self).__init__()
+        assert len(class_names) == num_classes, "Number of class names must match number of classes"
+        self.class_names = class_names
+        self.num_classes = num_classes
         self.loss = nn.CrossEntropyLoss()
         self.model, self.input_size = self.initialize_model(num_classes, feature_extract)
-
+        self.master_log = master_log
         # Test Metrics
-        self.test_acc = tm.Accuracy(num_classes=num_classes, multiclass=True, average='macro', )
-        self.test_f1 = tm.F1Score(num_classes=num_classes, multiclass=True, average='macro', )
-        self.test_auc = tm.AUROC(num_classes=num_classes, multiclass=True, average='macro', )
-        self.test_prec = tm.Precision(num_classes=num_classes, multiclass=True, average='macro', )
-        self.test_recall = tm.Recall(num_classes=num_classes, multiclass=True, average='macro', )
+        self.test_acc = tm.Accuracy(num_classes=num_classes, average='macro')
+        self.test_f1 = tm.F1Score(num_classes=num_classes, average='macro')
+        self.test_auc = tm.AUROC(num_classes=num_classes, average='macro')
+        self.test_prec = tm.Precision(num_classes=num_classes, average='macro')
+        self.test_recall = tm.Recall(num_classes=num_classes, average='macro')
 
-        self.conf_matrix = tm.ConfusionMatrix(num_classes=num_classes)
         self.save_hyperparameters(ignore=[
             'feature_extract'
         ])
@@ -52,13 +53,14 @@ class Efficientnet(LightningModule):
         # return loss, outputs, category_labels
         return {'loss': loss, 'outputs': outputs, 'labels': category_labels}
 
+
     def train_step(self, batch, batch_idx):
         return self._common_step(batch, batch_idx)
 
 
     def train_epoch_end(self, epoch_output):
         stage = 'train'
-        res = log_metrics(epoch_output, stage)
+        res = log_metrics(self, epoch_output, stage)
         return res
 
 
@@ -68,7 +70,7 @@ class Efficientnet(LightningModule):
 
     def val_epoch_end(self, outputs):
         stage = "val"
-        res = log_metrics(outputs, stage)
+        res = log_metrics(self, outputs, stage)
         return res
 
 
@@ -78,7 +80,7 @@ class Efficientnet(LightningModule):
 
     def testing_end(self, outputs):
         stage = "test"
-        res = log_metrics(outputs, stage)
+        res = log_metrics(self, outputs, stage)
         return res
 
 

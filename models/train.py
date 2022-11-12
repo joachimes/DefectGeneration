@@ -6,7 +6,7 @@ class LitTrainer(LightningModule):
         super(LitTrainer, self).__init__()
         accepted_models = [Efficientnet.__name__, DiffusionNet.__name__] # Extendable
         assert model_name in accepted_models, 'Model not supported' 
-        self.model_module = eval(model_name)(**kwargs)
+        self.model_module = eval(model_name)(master_log=self.log, **kwargs)
         self.lr = lr
         self.weight_decay = weight_decay if weight_decay else 0
 

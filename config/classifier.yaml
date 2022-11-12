@@ -1,15 +1,16 @@
 model:
   lr: 1e-5
-  patience: 10
+  patience: 15
   max_epochs: 100
-  num_classes: None
   model_name: Efficientnet
+  num_classes: None
+  class_names: None
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 6
   weighted_sampling: 1
-  num_workers: 1
+  num_workers: 8
   batch_size: 64
   img_size: 224
   mean: [0.485, 0.456, 0.406]

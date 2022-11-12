@@ -16,12 +16,14 @@ def main(cfg: DictConfig) -> None:
     print(cfg.dataset)
     
     dm = VialDataModule(**cfg.dataset)
-    category_level = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
-    cfg.model[category_level] = dm.__getattribute__(category_level)
-
+    category_num = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
+    cfg.model[category_num] = dm.__getattribute__(category_num)
+    category_names = 'class_names' if 'class_names' in cfg.model else 'defect_names'
+    cfg.model[category_names] = dm.__getattribute__(category_names)
+    
     log_folder = 'tb_logs'
     model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
-    version_hparams = ['dataset_type',category_level, 'batch_size', 'max_epochs']
+    version_hparams = ['dataset_type',category_num, 'batch_size', 'max_epochs']
     get_first_letters = lambda hparam: ''.join([word[:3] for word in hparam.split('_')])
     version_name = f"{'_'.join([get_first_letters(hp) for hp in version_hparams])}"
     get_cfg_value = lambda x:  [cfg[cfg_index][x] for cfg_index in cfg if x in cfg[cfg_index]]

@@ -153,10 +153,18 @@ class VialDataModule(LightningDataModule):
             if self.num_classes == 0:
                 self.num_classes = len(self.vial_loader[split].categorical)
                 self.num_defects = len(self.vial_loader[split].defect_cat)
+                self.class_names = self.vial_loader[split].categorical
+                self.defect_names = self.vial_loader[split].defect_cat
+            self.check_data(self.vial_loader[split].defect_cat, self.defect_names, split)
+            self.check_data(self.vial_loader[split].categorical, self.class_names, split)
             if self.num_defects != len(self.vial_loader[split].defect_cat):
                 raise Exception(f'Mismatch of number of defect categories in the train split versus the {split} split')
         self.sampler = self.vial_loader['train'].sampler() if weighted_sampling else None
 
+    def check_data(self, new_dict, old_dict, split=None):
+        for k, v in new_dict.items():
+            if k not in old_dict:
+                raise Exception(f"Defect {k} not found in {split} split")
 
     def train_dataloader(self):
         return DataLoader(self.vial_loader['train'], batch_size=self.batch_size, num_workers=self.num_workers, sampler=self.sampler, persistent_workers=True, pin_memory=True)
