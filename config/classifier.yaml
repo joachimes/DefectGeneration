@@ -1,3 +1,8 @@
+state:
+  mode: train
+  load: False
+  version_hparams: [dataset_type, batch_size, max_epochs]
+
 model:
   lr: 1e-5
   patience: 15
