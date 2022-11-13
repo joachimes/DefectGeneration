@@ -17,7 +17,7 @@ def fill_dict(len_vis_txt, folder_class, git_hash, version, master_dict, split, 
     master_dict[split][folder_class][origin]['n_images'] += len_vis_txt
     return master_dict
 
-def generate_sets(path:str, master_dict:dict, origins:list, cam:int, def_dict:dict, gen_sets:list=[]):
+def generate_sets(path:str, master_dict:dict, origins:list, cam:int, def_dict:dict, gen_sets:list=['train']):
     target_origin = 'Real'
     for origin in origins:
         target_path = path+f'{os.sep}{origin}{os.sep}CAM' + str(cam)
@@ -29,7 +29,6 @@ def generate_sets(path:str, master_dict:dict, origins:list, cam:int, def_dict:di
                 git_hash = path_split[-2-raiser]
                 version = [path_split[-1]] if raiser == 1 else []
                 current_path_split = path_split[-1-raiser]
-                gen_sets += [current_path_split]
                 for split in gen_sets:
                     set_path = dirpath.replace(current_path_split, split)
                     if split != current_path_split:
@@ -70,7 +69,7 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
                             master_dict['test'].pop(folder_class)
                         break
 
-        
+                    
     if not osp.exists(f'config{os.sep}data_config{os.sep}CAM{cam}'):
         os.makedirs(f'config{os.sep}data_config{os.sep}CAM{cam}')
     dest_path = osp.join('config','data_config',f'cam{cam}',f'{"_".join(origins)}.yaml')
@@ -79,7 +78,7 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
 
 if __name__ == '__main__':
     origins_combinations = [['Real'], ['Synthetic'], ['Real', 'Synthetic']]
-    origins_combinations = [ ['Synthetic']]
+    origins_combinations =[ ['Real', 'Synthetic']]
     # iterate over all wanted combinations of origins
     for origins in origins_combinations: 
         for cam in [2,3,5,6]:
