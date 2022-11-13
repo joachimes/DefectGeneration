@@ -104,6 +104,16 @@ test:
       split: test
       versions:
       - A
+  LFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 660
+      split: test
+      versions:
+      - A
+      - B
   SSNPDCake:
     Real:
       category: C2
@@ -289,6 +299,23 @@ train:
       n_images: 5000
       split: train
       versions: []
+  LFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 810
+      split: train
+      versions:
+      - A
+      - B
+    Synthetic:
+      category: F3
+      hash:
+      - v0.1 - main - 8e82c19
+      n_images: 2000
+      split: train
+      versions: []
   SSNPDCake:
     Real:
       category: C2
@@ -419,6 +446,16 @@ val:
       split: val
       versions:
       - A
+  LFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 150
+      split: val
+      versions:
+      - A
+      - B
   SSNPDCake:
     Real:
       category: C2

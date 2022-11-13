@@ -1,4 +1,16 @@
 test:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 165
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
   ChipS:
     Real:
       category: C1
@@ -95,6 +107,16 @@ test:
       - B
       - C
       - F
+  GPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 20
+      split: test
+      versions:
+      - A
+      - B
   Good:
     Real:
       category: Good
@@ -114,6 +136,27 @@ test:
       versions:
       - A
       - B
+  SLFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 870
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  SPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 19
+      split: test
+      versions:
+      - A
   SSNPDCake:
     Real:
       category: C2
@@ -128,8 +171,63 @@ test:
       - D
       - E
       - F
+  SnFD:
+    Real:
+      category: F1
+      hash:
+      - current_version
+      n_images: 240
+      split: test
+      versions:
+      - A
+  THF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 540
+      split: test
+      versions:
+      - A
+      - B
+      - C
+  TLF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 750
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
 train:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 164
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
   ChipS:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 33
+      split: train
+      versions:
+      - A
+      - C
+      - D
+      - E
     Synthetic:
       category: C1
       hash:
@@ -138,6 +236,18 @@ train:
       split: train
       versions: []
   ChipSh:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 50
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
     Synthetic:
       category: C1
       hash:
@@ -146,6 +256,22 @@ train:
       split: train
       versions: []
   CrackAbove:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 628
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
     Synthetic:
       category: C1
       hash:
@@ -154,6 +280,18 @@ train:
       split: train
       versions: []
   CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 183
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
     Synthetic:
       category: C1
       hash:
@@ -164,6 +302,15 @@ train:
       split: train
       versions: []
   DPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 282
+      split: train
+      versions:
+      - A
+      - B
     Synthetic:
       category: D1
       hash:
@@ -172,6 +319,14 @@ train:
       split: train
       versions: []
   EV:
+    Real:
+      category: E2
+      hash:
+      - current_version
+      n_images: 270
+      split: train
+      versions:
+      - A
     Synthetic:
       category: E2
       hash:
@@ -180,6 +335,15 @@ train:
       split: train
       versions: []
   FMI:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 441
+      split: train
+      versions:
+      - A
+      - B
     Synthetic:
       category: D1
       hash:
@@ -188,6 +352,17 @@ train:
       split: train
       versions: []
   FMOV:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 187
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - F
     Synthetic:
       category: C2
       hash:
@@ -195,6 +370,16 @@ train:
       n_images: 1496
       split: train
       versions: []
+  GPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 25
+      split: train
+      versions:
+      - A
+      - B
   Good:
     Real:
       category: Good
@@ -212,6 +397,15 @@ train:
       split: train
       versions: []
   LFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 810
+      split: train
+      versions:
+      - A
+      - B
     Synthetic:
       category: F3
       hash:
@@ -219,7 +413,41 @@ train:
       n_images: 2000
       split: train
       versions: []
+  SLFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 990
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+  SPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 36
+      split: train
+      versions:
+      - A
   SSNPDCake:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 250
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
     Synthetic:
       category: C2
       hash:
@@ -230,7 +458,51 @@ train:
       n_images: 5253
       split: train
       versions: []
+  SnFD:
+    Real:
+      category: F1
+      hash:
+      - current_version
+      n_images: 270
+      split: train
+      versions:
+      - A
+  THF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 570
+      split: train
+      versions:
+      - A
+      - B
+      - C
+  TLF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 840
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
 val:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 33
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
   ChipS:
     Real:
       category: C1
@@ -327,6 +599,16 @@ val:
       - B
       - C
       - F
+  GPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 4
+      split: val
+      versions:
+      - A
+      - B
   Good:
     Real:
       category: Good
@@ -346,6 +628,27 @@ val:
       versions:
       - A
       - B
+  SLFD:
+    Real:
+      category: F3
+      hash:
+      - current_version
+      n_images: 180
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  SPSCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 6
+      split: val
+      versions:
+      - A
   SSNPDCake:
     Real:
       category: C2
@@ -360,3 +663,35 @@ val:
       - D
       - E
       - F
+  SnFD:
+    Real:
+      category: F1
+      hash:
+      - current_version
+      n_images: 60
+      split: val
+      versions:
+      - A
+  THF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 90
+      split: val
+      versions:
+      - A
+      - B
+      - C
+  TLF:
+    Real:
+      category: E1
+      hash:
+      - current_version
+      n_images: 180
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D

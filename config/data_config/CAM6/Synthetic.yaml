@@ -57,7 +57,7 @@ train:
       category: F1
       hash:
       - version4
-      n_images: 46000
+      n_images: 1000
       split: train
       versions: []
   DPCake:
@@ -66,7 +66,7 @@ train:
       hash:
       - version3
       - version4
-      n_images: 527000
+      n_images: 11000
       split: train
       versions: []
   GPCake:
@@ -78,16 +78,25 @@ train:
       - v0.1-gpcake-6c5d1ec
       - version3
       - version4
-      n_images: 1070699
+      n_images: 20737
       split: train
       versions: []
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 42420
+      split: train
+      versions:
+      - A
   SPCake:
     Synthetic:
       category: D1
       hash:
       - v0.1 - DPCakeShade - 932a0de
       - version4
-      n_images: 712108
+      n_images: 13002
       split: train
       versions: []
 val:

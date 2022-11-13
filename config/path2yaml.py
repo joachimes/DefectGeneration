@@ -39,6 +39,23 @@ def generate_sets(path:str, master_dict:dict, origins:list, cam:int, def_dict:di
                     master_dict = fill_dict(len_vis_txt, folder_class, git_hash, version, master_dict, split, origin, def_dict)
     return master_dict
 
+def add_real_good(path:str, master_dict:dict, cam:int, def_dict:dict):
+    target_origin = 'Real'
+    split = 'train'
+    target_path = path+f'{os.sep}{target_origin}{os.sep}CAM' + str(cam)
+    for dirpath, dirnames, _ in os.walk(target_path):
+        if 'images' in dirnames and f'{os.sep}train' in dirpath and 'Good' in dirpath:
+            path_split = dirpath.split(os.sep)
+            raiser = 0 if f'train' in path_split[-1] else 1
+            folder_class = path_split[-3-raiser]
+            git_hash = path_split[-2-raiser]
+            version = [path_split[-1]] if raiser == 1 else []
+            current_path_split = path_split[-1-raiser]
+            set_path = dirpath.replace(current_path_split, split)
+
+            len_vis_txt = len(np.unique(glob.glob(osp.join(set_path, 'images', '*.*'))))
+            master_dict = fill_dict(len_vis_txt, folder_class, git_hash, version, master_dict, split, target_origin, def_dict)
+    return master_dict
 
 def read_files(path:str, def_dict:dict, cam:int, origins:list):
     master_dict = {'train':{}, 'val':{}, 'test':{}}
@@ -47,6 +64,8 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
     master_dict['train'] = {}
     master_dict = generate_sets(path, master_dict, origins, cam, def_dict)
     # ensure that all classes are in all splits else pop
+    if 'Real' not in origins:
+        master_dict = add_real_good(path, master_dict, cam, def_dict)
     for split in list(master_dict):
         rest_splits = [k for k in master_dict.keys() if k != split]
         for folder_class in list(master_dict[split]):
@@ -61,7 +80,7 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
                 for origin in origins:
                     if origin not in master_dict[split][folder_class]:
                         #pop from master_dict
-                        print(f'CAM{cam} Origin {origin} does not exist {folder_class} in train set so popping from dict')
+                        print(f'CAM{cam} Origin {origin} does not contain {folder_class} in train set so popping from dict')
                         master_dict[split].pop(folder_class)
                         if folder_class in master_dict['val']:
                             master_dict['val'].pop(folder_class)
@@ -78,7 +97,7 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
 
 if __name__ == '__main__':
     origins_combinations = [['Real'], ['Synthetic'], ['Real', 'Synthetic']]
-    origins_combinations =[ ['Real', 'Synthetic']]
+    origins_combinations =[ ['Synthetic']]
     # iterate over all wanted combinations of origins
     for origins in origins_combinations: 
         for cam in [2,3,5,6]:

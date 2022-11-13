@@ -111,6 +111,16 @@ test:
       split: test
       versions:
       - A
+  MSF:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 510
+      split: test
+      versions:
+      - A
+      - B
   MST:
     Real:
       category: B1
@@ -327,6 +337,23 @@ train:
       n_images: 2289
       split: train
       versions: []
+  MSF:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 570
+      split: train
+      versions:
+      - A
+      - B
+    Synthetic:
+      category: B1
+      hash:
+      - v0.1 - main - 8e82c19
+      n_images: 2000
+      split: train
+      versions: []
   MST:
     Real:
       category: B1
@@ -495,6 +522,16 @@ val:
       split: val
       versions:
       - A
+  MSF:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 120
+      split: val
+      versions:
+      - A
+      - B
   MST:
     Real:
       category: B1
