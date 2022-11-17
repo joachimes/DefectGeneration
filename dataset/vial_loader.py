@@ -123,6 +123,8 @@ class VialLoader(Dataset):
                     d_path_dict[defect_name]['category'] = defect_state['category']
                 for defect_hash in defect_state['hash']:
                     d_path_hash = osp.join(data_path, defect_origin, f'CAM{camera}', defect_name, defect_hash, defect_state['split'])
+                    if defect_state['versions'] == []:
+                        d_path_dict[defect_name]['paths'].append(d_path_hash)
                     for version in defect_state['versions']:
                         d_path_dict[defect_name]['paths'].append(osp.join(d_path_hash, version))
         return d_path_dict
