@@ -230,7 +230,7 @@ class DiffusionNet(LightningModule):
         shape  = (16, 3, self.img_size, self.img_size)
         samples = self.p_sample_loop(shape)
 
-        grid = make_grid(samples[-1], nrow=4)
+        grid = make_grid((samples[-1] + 1) * 0.5, nrow=4)
         self.logger.experiment.add_image(f'generated_images', grid, self.current_epoch)
 
         # grid = make_grid(sample['progressive_samples'].reshape(-1, 3, self.img_size, self.img_size), nrow=20)
