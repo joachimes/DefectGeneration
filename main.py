@@ -51,17 +51,16 @@ def main(cfg: DictConfig) -> None:
         callbacks=callbacks,
         # profiler='simple'
     )
-
+    weight_path = None
     if cfg.state.load and len((model_dir := os.listdir(model_path))) > 0:
-        weight_files = {f_name: float(f_name.split('_')[1].split('.')[0]) for f_name in model_dir if 'model_' in f_name}
-        weight_path = osp.join(model_path, max(weight_files, key=weight_files.get))
-        model = LitTrainer(**cfg.model).load_from_checkpoint(weight_path) 
-    else: 
-        model = LitTrainer(**cfg.model)
+        weight_file = [f_name for f_name in model_dir if 'model_' in f_name][-1]
+        weight_path = osp.join(model_path, weight_file) 
+     
+    model = LitTrainer(**cfg.model)
     if cfg.state.mode == 'train':
-        trainer.fit(model, datamodule=dm)
+        trainer.fit(model, datamodule=dm, ckpt_path=weight_path)
     else:
-        trainer.test(model, datamodule=dm)
+        trainer.test(model, datamodule=dm, ckpt_path=weight_path)
     return
 
 if __name__ == "__main__":
