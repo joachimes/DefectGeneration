@@ -1,10 +1,10 @@
 from pytorch_lightning import LightningModule
-from models import Efficientnet, DiffusionNet
+from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet
 
 class LitTrainer(LightningModule):
     def __init__(self, model_name='Efficientnet', lr=1e-3, weight_decay=None, **kwargs) -> None:
         super(LitTrainer, self).__init__()
-        accepted_models = [Efficientnet.__name__, DiffusionNet.__name__] # Extendable
+        accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__] # Extendable
         assert model_name in accepted_models, 'Model not supported' 
         self.model_module = eval(model_name)(master_log=self.log, **kwargs)
         self.lr = lr

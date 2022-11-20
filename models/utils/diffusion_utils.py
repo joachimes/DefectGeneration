@@ -6,13 +6,10 @@ https://huggingface.co/blog/annotated-diffusion
 import math
 from inspect import isfunction
 
-import matplotlib.pyplot as plt
-from tqdm.auto import tqdm
 from einops import rearrange
 
 import torch
 from torch import nn, einsum
-import torch.nn.functional as F
 
 # --------------------------- U-Net
 def exists(x):

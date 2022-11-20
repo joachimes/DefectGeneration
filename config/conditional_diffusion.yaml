@@ -1,0 +1,29 @@
+state:
+  mode: train
+  load: False
+  version_hparams: [dataset_type, batch_size, timesteps]
+
+model:
+  lr: 1e-3
+  patience: 100
+  max_epochs: 304
+  num_defects: None
+  defect_names: None
+  model_name: ConditionalDiffusionNet
+  dim_mults: [1, 2]
+  img_size: 32
+  channels: 3
+  timesteps: 200
+  batch_size: 16
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/Data
+  camera: 3
+  weighted_sampling: 0
+  num_workers: 1
+  batch_size: 16
+  img_size: 32
+  dataset_type: Real_Good
+  transform:
+
+      
