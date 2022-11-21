@@ -22,7 +22,8 @@ def main(cfg: DictConfig) -> None:
     cfg.model[category_num] = dm.__getattribute__(category_num)
     category_names = 'class_names' if 'class_names' in cfg.model else 'defect_names'
     cfg.model[category_names] = dm.__getattribute__(category_names)
-    
+    fill_none(cfg)
+
     log_folder = 'tb_logs'
     model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
     
@@ -62,6 +63,16 @@ def main(cfg: DictConfig) -> None:
     else:
         trainer.test(model, datamodule=dm, ckpt_path=weight_path)
     return
+
+
+def fill_none(cfg:DictConfig):
+    for cfg_key, cfg_inner in cfg['dataset'].items():
+        if cfg_inner is None and cfg_key in cfg['model']:
+            cfg['dataset'][cfg_key] = cfg['model'][cfg_key] 
+    
+    for cfg_key, cfg_inner in cfg['model'].items():
+        if cfg_inner is None and cfg_key in cfg['dataset']:
+            cfg['model'][cfg_key] =  cfg['dataset'][cfg_key] 
 
 if __name__ == "__main__":
     main()
