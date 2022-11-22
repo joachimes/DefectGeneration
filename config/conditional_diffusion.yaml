@@ -1,6 +1,7 @@
 state:
   mode: train
   load: False
+  model_name: ConditionalDiffusionNet
   version_hparams: [dataset_type, batch_size, timesteps]
 
 model:
@@ -9,12 +10,11 @@ model:
   max_epochs: 304
   num_defects: None
   defect_names: None
-  model_name: ConditionalDiffusionNet
   dim_mults: [1, 2]
-  img_size: 32
   channels: 3
   timesteps: 200
-  batch_size: 16
+  img_size:
+  batch_size:
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/Data

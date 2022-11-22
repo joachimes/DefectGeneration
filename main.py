@@ -5,10 +5,11 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.loggers.tensorboard import TensorBoardLogger
 from pytorch_lightning.callbacks import ModelCheckpoint, EarlyStopping
 from dataset.vial_loader import VialDataModule
-from models.train import LitTrainer
 import tensorboard
 import hydra 
 from omegaconf import DictConfig, OmegaConf
+from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet
+
 
 @hydra.main(version_base=None, config_path="config", config_name="classifier")
 def main(cfg: DictConfig) -> None:
@@ -25,7 +26,7 @@ def main(cfg: DictConfig) -> None:
     fill_none(cfg)
 
     log_folder = 'tb_logs'
-    model_name = f"{cfg.model.model_name}_CAM{cfg.dataset.camera}"
+    model_name = f"{cfg.state.model_name}_CAM{cfg.dataset.camera}"
     
     get_first_letters = lambda hparam: ''.join([word[:3] for word in hparam.split('_')])
     version_name = f"{'_'.join([get_first_letters(hp) for hp in cfg.state.version_hparams])}"
@@ -57,7 +58,10 @@ def main(cfg: DictConfig) -> None:
         weight_file = [f_name for f_name in model_dir if 'model_' in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      
-    model = LitTrainer(**cfg.model)
+    accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__]
+    assert cfg.state.model_name in accepted_models, 'Model not supported' 
+    
+    model = eval(cfg.state.model_name)(**cfg.model)
     if cfg.state.mode == 'train':
         trainer.fit(model, datamodule=dm, ckpt_path=weight_path)
     else:

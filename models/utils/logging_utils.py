@@ -75,9 +75,9 @@ def log_metrics(self, epoch_output, stage='val'):
         self.test_f1(preds, labels.to(torch.uint8))
         # self.test_auc(probs, labels.to(torch.uint8))
         # Metrics Log
-        self.master_log(f'{stage}_acc', self.test_acc, on_epoch=True, logger=True)
-        self.master_log(f'{stage}_f1', self.test_f1, on_epoch=True, logger=True)
-        # self.master_log(f'{stage}_auc', self.test_auc, on_epoch=True, logger=True)
-        self.master_log(f'{stage}_prec', self.test_prec, on_epoch=True, logger=True)
-        self.master_log(f'{stage}_recall', self.test_recall, on_epoch=True, logger=True)
+        self.log(f'{stage}_acc', self.test_acc, on_epoch=True, logger=True)
+        self.log(f'{stage}_f1', self.test_f1, on_epoch=True, logger=True)
+        # self.log(f'{stage}_auc', self.test_auc, on_epoch=True, logger=True)
+        self.log(f'{stage}_prec', self.test_prec, on_epoch=True, logger=True)
+        self.log(f'{stage}_recall', self.test_recall, on_epoch=True, logger=True)
     return {f'{stage}_avg_loss': loss}
