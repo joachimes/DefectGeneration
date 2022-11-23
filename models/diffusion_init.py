@@ -1,15 +1,14 @@
 import torch
 from torchvision.utils import  make_grid
-from torch.optim import Adam
-from pytorch_lightning import LightningModule
+from models.train import LitTrainer
 from models.utils.diffusion_utils import cosine_beta_schedule, linear_beta_schedule
 from models.utils.UNet import UNet
 import torch.nn.functional as F
 from tqdm.auto import tqdm
 
-class DiffusionNet(LightningModule):
+class DiffusionNet(LitTrainer):
     def __init__(self, img_size, channels, timesteps=200, batch_size=8, **kwargs) -> None:
-        super(DiffusionNet, self).__init__()
+        super(DiffusionNet, self).__init__(**kwargs)
         self.channels = channels
         self.img_size = img_size
         self.timesteps = timesteps
@@ -115,49 +114,32 @@ class DiffusionNet(LightningModule):
         grid = make_grid((samples[-1] + 1) * 0.5, nrow=4)
         self.logger.experiment.add_image(f'generated_images', grid, self.current_epoch)
 
-        # grid = make_grid(sample['progressive_samples'].reshape(-1, 3, self.img_size, self.img_size), nrow=20)
-        # self.logger.experiment.add_image(f'progressive_generated_images', grid, self.current_epoch)
-    
 
-    def train_step(self, batch, batch_idx):
+    def _common_step(self, batch, batch_idx):
         batch_imgs, *_ = batch
         t = torch.randint(0, self.timesteps, (batch_imgs.shape[0],), device=self.device)
         loss = self.p_losses(batch_imgs, t, loss_type="huber")
-
         return {'loss': loss}
+
     
-    
-    def train_epoch_end(self, outputs):
+    def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         res = {'train_avg_loss': avg_loss}
         return res
         
 
-    def val_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'val_loss': res['loss']}
-
-
-    def val_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
+    def validation_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         res = {'val_avg_loss': avg_loss}
         self.log_samples()
         return res
 
-    def testing_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'test_loss': res['loss']}
 
-
-    def testing_end(self, outputs):
-        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
+    def test_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         res = {'test_avg_loss': avg_loss}
         self.log_samples()
         return res
-
-
-    def optimizer(self, parameters, lr, weight_decay):
-        return Adam(parameters, lr=lr, weight_decay=weight_decay)
 
 
     def num_to_groups(self, num, divisor):
@@ -167,7 +149,3 @@ class DiffusionNet(LightningModule):
         if remainder > 0:
             arr.append(remainder)
         return arr
-
-
-
-

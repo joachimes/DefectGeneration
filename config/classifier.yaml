@@ -1,13 +1,13 @@
 state:
   mode: train
   load: False
+  model_name: Efficientnet
   version_hparams: [dataset_type, batch_size, max_epochs]
 
 model:
   lr: 1e-5
   patience: 15
   max_epochs: 100
-  model_name: Efficientnet
   num_classes: None
   class_names: None
 

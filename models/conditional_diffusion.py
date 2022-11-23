@@ -1,17 +1,16 @@
 import torch
 import torch.nn.functional as F
 from tqdm import tqdm
-from torch.optim import Adam
 from models.utils.conditional_UNet import UNetConditional
 from models.diffusion_init import DiffusionNet
 
 
 class ConditionalDiffusionNet(DiffusionNet):
-    def __init__(self, img_size, channels, timesteps=200, batch_size=8, num_defects=14, **kwargs) -> None:
-        super().__init__(img_size=img_size, channels=channels, timesteps=timesteps, batch_size=batch_size, **kwargs)
+    def __init__(self, num_defects=14, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self.num_classes = num_defects
-        self.model = UNetConditional(img_size=img_size, channels=channels, num_classes=self.num_classes, **kwargs)
+        self.model = UNetConditional(num_classes=self.num_classes, **kwargs)
 
 
     def p_losses(self, x_start, t, labels, noise=None, loss_type="l1"):
@@ -33,13 +32,6 @@ class ConditionalDiffusionNet(DiffusionNet):
         return loss
 
 
-    def extract(self, a, t, x_shape):
-        batch_size = t.shape[0]
-        out = a.gather(-1, t.cpu())
-        return out.reshape(batch_size, *((1,) * (len(x_shape) - 1))).to(self.device)
-    
-
-
     # Algorithm 2 (including returning all images)
     @torch.no_grad()
     def p_sample_loop(self, shape):
@@ -54,6 +46,7 @@ class ConditionalDiffusionNet(DiffusionNet):
             imgs.append(img)
         return imgs
     
+
     def p_sampler(self, x, labels, t, t_index) -> torch.Tensor:
         betas_t = self.extract(self.betas, t, x.shape)
         sqrt_one_minus_alphas_cumprod_t = self.extract(
@@ -75,46 +68,13 @@ class ConditionalDiffusionNet(DiffusionNet):
             return model_mean + torch.sqrt(posterior_variance_t) * noise 
 
 
-    def train_step(self, batch, batch_idx):
+    def _common_step(self, batch, batch_idx):
         batch_imgs, _, labels = batch
         t = torch.randint(0, self.timesteps, (batch_imgs.shape[0],), device=self.device)
         loss = self.p_losses(batch_imgs, t, labels, loss_type="l2")
-
         return {'loss': loss}
+
+
     
     
-    def train_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        res = {'train_avg_loss': avg_loss}
-        return res
-        
-
-    def val_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'val_loss': res['loss']}
-
-
-    def val_epoch_end(self, outputs):
-        avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
-        res = {'val_avg_loss': avg_loss}
-        self.log_samples()
-        return res
-
-    def testing_step(self, batch, batch_idx):
-        res = self.train_step(batch, batch_idx)
-        return {'test_loss': res['loss']}
-
-
-    def testing_end(self, outputs):
-        avg_loss = torch.stack([x['test_loss'] for x in outputs]).mean()
-        res = {'test_avg_loss': avg_loss}
-        self.log_samples()
-        return res
-
-
-    def optimizer(self, parameters, lr, weight_decay):
-        return Adam(parameters, lr=lr, weight_decay=weight_decay)
-
-
-
 
