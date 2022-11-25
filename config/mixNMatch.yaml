@@ -4,13 +4,17 @@ state:
   version_hparams: [dataset_type, batch_size, timesteps]
 
 model:
-  lr: 1e-3
+  lr: 2e-4
   patience: 100
   max_epochs: 304
   num_defects: None
+  num_categories: None
   defect_names: None
   model_name: MixNMatch
   channels: 1
+  gan:
+    z_dim: 100
+    gf_dim: 64
   img_size:
   batch_size: 
 
@@ -20,8 +24,9 @@ dataset:
   weighted_sampling: 0
   num_workers: 1
   batch_size: 16
-  img_size: 32
+  img_size: 64
   dataset_type: Real_Good
+  branch_num: 3
   transform:
 
       

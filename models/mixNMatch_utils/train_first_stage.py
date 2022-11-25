@@ -7,7 +7,7 @@ import torch.optim as optim
 from models.mixNMatch_utils.model_train import G_NET, BACKGROUND_D, PARENT_D, CHILD_D, Encoder, Bi_Dis
 from models.mixNMatch_utils.datasets import get_dataloader
 import random
-from utils import *
+from models.mixNMatch_utils.utils import weights_init, child_to_parent, cal_gradient_penalty, save_img_results
 from itertools import chain
 from copy import deepcopy
 cudnn.benchmark = True
@@ -36,7 +36,7 @@ def define_optimizers( netG, netsD, BD, encoder ):
     optimizerGE = optim.Adam(  params , lr=2e-4, betas=(0.5, 0.999) ) 
  
    
-    return optimizersD, optimizerBD, optimizerGE
+    return *optimizersD, optimizerBD, optimizerGE
 
 
 
@@ -63,25 +63,19 @@ class CrossEntropy():
 
 
 
-def load_network():
+def load_network(gan_cfg, fine_grained_categories, super_categories, device):
 
-    gpus = [int(ix) for ix in cfg.GPU_ID.split(',')]
- 
-    netG = G_NET()
+    netG = G_NET(gan_cfg=gan_cfg, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
     netG.apply(weights_init)
-    netG = torch.nn.DataParallel(netG, device_ids=gpus)
   
-    netsD = [ BACKGROUND_D(), PARENT_D(), CHILD_D() ]
+    netsD = [ BACKGROUND_D(), PARENT_D(super_categories=super_categories), CHILD_D(fine_grained_categories=fine_grained_categories) ]
     for i in range(len(netsD)):
         netsD[i].apply(weights_init)
-        netsD[i] = torch.nn.DataParallel(netsD[i], device_ids=gpus)       
 
-    BD = Bi_Dis()
-    BD = torch.nn.DataParallel(BD, device_ids=gpus)     
+    BD = Bi_Dis(z_dim=gan_cfg.z_dim, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
 
-    encoder = Encoder()
+    encoder = Encoder(z_dim=gan_cfg.z_dim, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
     encoder.apply(weights_init)
-    encoder = torch.nn.DataParallel(encoder, device_ids=gpus)
    
     netG.to(device)  
     encoder.to(device)  
@@ -323,13 +317,13 @@ class Trainer(object):
 
     def train(self):
 
-        # prepare net, optimizer and loss
-        self.netG, self.netsD, self.BD, self.encoder = load_network()   
-        self.optimizersD, self.optimizerBD, self.optimizerGE = define_optimizers( self.netG, self.netsD, self.BD, self.encoder )
-        self.RF_loss_un = nn.BCELoss(reduction='none')
-        self.RF_loss = nn.BCELoss()   
-        self.CE = CrossEntropy()        
-        self.L1 = nn.L1Loss()
+        # # prepare net, optimizer and loss
+        # self.netG, self.netsD, self.BD, self.encoder = load_network()   
+        # self.optimizersD, self.optimizerBD, self.optimizerGE = define_optimizers( self.netG, self.netsD, self.BD, self.encoder )
+        # self.RF_loss_un = nn.BCELoss(reduction='none')
+        # self.RF_loss = nn.BCELoss()   
+        # self.CE = CrossEntropy()        
+        # self.L1 = nn.L1Loss()
     
 
 

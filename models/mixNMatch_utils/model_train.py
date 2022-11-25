@@ -2,7 +2,6 @@ import sys
 import torch
 import torch.nn as nn
 import torch.nn.parallel
-# from config import cfg
 from torch.autograd import Variable
 import torch.nn.functional as F
 from torch.nn import Upsample
@@ -86,11 +85,11 @@ class GET_MASK(nn.Module):
 
 
 class BACKGROUND_STAGE(nn.Module):
-    def __init__(self, ngf):
+    def __init__(self, ngf, z_dim, fine_grained_categories):
         super().__init__()
         
         self.ngf = ngf        
-        in_dim = cfg.GAN.Z_DIM + cfg.FINE_GRAINED_CATEGORIES  
+        in_dim = z_dim + fine_grained_categories 
 
         self.fc = nn.Sequential( nn.Linear(in_dim, ngf*4*4 * 2, bias=False), nn.BatchNorm1d(ngf*4*4 * 2), GLU())
         # 1024*4*4
@@ -117,12 +116,12 @@ class BACKGROUND_STAGE(nn.Module):
 
 
 class PARENT_STAGE(nn.Module):
-    def __init__(self, ngf):
+    def __init__(self, ngf, z_dim: int, super_categories: int):
         super().__init__()
         
         self.ngf = ngf
-        in_dim = cfg.GAN.Z_DIM + cfg.SUPER_CATEGORIES
-        self.code_len = cfg.SUPER_CATEGORIES
+        in_dim = z_dim + super_categories
+        self.code_len = super_categories
 
         self.fc = nn.Sequential( nn.Linear(in_dim, ngf*4*4 * 2, bias=False), nn.BatchNorm1d(ngf*4*4 * 2), GLU())
         # 512*4*4
@@ -136,7 +135,7 @@ class PARENT_STAGE(nn.Module):
         # 16*64*64
         self.upsample5 = upBlock(ngf // 32, ngf // 32)
         # 16*128*128
-        self.jointConv = sameBlock( cfg.SUPER_CATEGORIES+ngf//32, ngf//32 )
+        self.jointConv = sameBlock( super_categories+ngf//32, ngf//32 )
         # (16+20)*128*128 --> 16*128*128
         self.residual = self._make_layer(3, ngf//32)
         # 16*128*128
@@ -172,11 +171,11 @@ class PARENT_STAGE(nn.Module):
 
 
 class CHILD_STAGE(nn.Module):
-    def __init__(self, ngf, num_residual=2):
+    def __init__(self, ngf, fine_grained_categories: int, num_residual=2):
         super().__init__()
         
         self.ngf = ngf 
-        self.code_len = cfg.FINE_GRAINED_CATEGORIES
+        self.code_len = fine_grained_categories
         self.num_residual = num_residual
 
         self.jointConv = sameBlock( self.code_len+self.ngf, ngf*2 )
@@ -202,23 +201,23 @@ class CHILD_STAGE(nn.Module):
 
 
 class G_NET(nn.Module):
-    def __init__(self):
+    def __init__(self, gan_cfg, fine_grained_categories, super_categories):
         super(G_NET, self).__init__()
         
-        ngf = cfg.GAN.GF_DIM 
-        self.scale_fimg = nn.UpsamplingBilinear2d(size=[126, 126])
+        ngf = gan_cfg.gf_dim
+        self.scale_fimg = nn.UpsamplingBilinear2d(size=(126, 126))
 
         # Background stage
-        self.background_stage = BACKGROUND_STAGE( ngf*8 )
+        self.background_stage = BACKGROUND_STAGE( ngf*8, gan_cfg.z_dim, fine_grained_categories)
         self.background_image = GET_IMAGE(ngf//2)
 
         # Parent stage networks
-        self.parent_stage = PARENT_STAGE( ngf*8 )
+        self.parent_stage = PARENT_STAGE( ngf*8, gan_cfg.z_dim, super_categories )
         self.parent_image = GET_IMAGE( ngf//4 )
         self.parent_mask = GET_MASK( ngf//4 )
 
         # Child stage networks
-        self.child_stage = CHILD_STAGE( ngf//4 )
+        self.child_stage = CHILD_STAGE( ngf//4, fine_grained_categories=fine_grained_categories )
         self.child_image = GET_IMAGE( ngf//4 ) 
         self.child_mask = GET_MASK( ngf//4 )
 
@@ -282,9 +281,9 @@ class BACKGROUND_D(nn.Module):
 
 
 class PARENT_D(nn.Module):
-    def __init__(self, ndf=32):
+    def __init__(self, super_categories, ndf=32):
         super().__init__()
-        self.code_len = cfg.SUPER_CATEGORIES
+        self.code_len = super_categories
         self.encode_mask =  nn.Sequential(  nn.Conv2d(3, ndf, 4, 2, 1, bias=False),
                                             nn.LeakyReLU(0.2, inplace=True),
                                             nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
@@ -313,9 +312,9 @@ class PARENT_D(nn.Module):
 
 
 class CHILD_D(nn.Module):
-    def __init__(self, ndf=64):
+    def __init__(self, fine_grained_categories, ndf=64):
         super().__init__()
-        self.code_len = cfg.FINE_GRAINED_CATEGORIES
+        self.code_len = fine_grained_categories
         self.encode_img = nn.Sequential(nn.Conv2d(3, ndf, 4, 2, 1, bias=False),
                                         nn.LeakyReLU(0.2, inplace=True),
                                         nn.Conv2d(ndf, ndf * 2, 4, 2, 1, bias=False),
@@ -378,10 +377,13 @@ def Block3x3_leakRelu(in_planes, out_planes):
 
 
 class Encoder(nn.Module):
-    def __init__(self, ):
+    def __init__(self, z_dim, fine_grained_categories, super_categories ):
         super(Encoder, self).__init__()
         self.ndf = 64
-
+        self.z_dim = z_dim
+        self.fine_grained_categories = fine_grained_categories
+        self.super_categories = super_categories
+        
         self.softmax = torch.nn.Softmax(dim=1)
 
 
@@ -389,7 +391,7 @@ class Encoder(nn.Module):
                                    downBlock(self.ndf*8, self.ndf*16),
                                    Block3x3_leakRelu(self.ndf*16, self.ndf*8),
                                    Block3x3_leakRelu(self.ndf*8, self.ndf*8),
-                                   nn.Conv2d(self.ndf*8, cfg.GAN.Z_DIM,  kernel_size=4, stride=4),
+                                   nn.Conv2d(self.ndf*8, z_dim,  kernel_size=4, stride=4),
                                    nn.Tanh())
 
 
@@ -397,27 +399,27 @@ class Encoder(nn.Module):
                                    downBlock(self.ndf*8, self.ndf*16),
                                    Block3x3_leakRelu(self.ndf*16, self.ndf*8),
                                    Block3x3_leakRelu(self.ndf*8, self.ndf*8),
-                                   nn.Conv2d(self.ndf*8, cfg.FINE_GRAINED_CATEGORIES,  kernel_size=4, stride=4))
+                                   nn.Conv2d(self.ndf*8, fine_grained_categories,  kernel_size=4, stride=4))
 
         self.model_p = nn.Sequential(encode_parent_and_child_img(self.ndf),
                                    downBlock(self.ndf*8, self.ndf*16),
                                    Block3x3_leakRelu(self.ndf*16, self.ndf*8),
                                    Block3x3_leakRelu(self.ndf*8, self.ndf*8),
-                                   nn.Conv2d(self.ndf*8, cfg.SUPER_CATEGORIES,  kernel_size=4, stride=4))
+                                   nn.Conv2d(self.ndf*8, super_categories,  kernel_size=4, stride=4))
 
         self.model_c = nn.Sequential(encode_parent_and_child_img(self.ndf),
                                    downBlock(self.ndf*8, self.ndf*16),
                                    Block3x3_leakRelu(self.ndf*16, self.ndf*8),
                                    Block3x3_leakRelu(self.ndf*8, self.ndf*8),
-                                   nn.Conv2d(self.ndf*8, cfg.FINE_GRAINED_CATEGORIES,  kernel_size=4, stride=4))
+                                   nn.Conv2d(self.ndf*8, fine_grained_categories,  kernel_size=4, stride=4))
 
 
     def forward(self, x_var, type_):  
 
-        code_z =   self.model_z(x_var).view(-1, cfg.GAN.Z_DIM)*4
-        code_b =   self.model_b(x_var).view(-1, cfg.FINE_GRAINED_CATEGORIES)
-        code_p =   self.model_p(x_var).view(-1, cfg.SUPER_CATEGORIES)
-        code_c =   self.model_c(x_var).view(-1, cfg.FINE_GRAINED_CATEGORIES)
+        code_z =   self.model_z(x_var).view(-1, self.z_dim)*4
+        code_b =   self.model_b(x_var).view(-1, self.fine_grained_categories)
+        code_p =   self.model_p(x_var).view(-1, self.super_categories)
+        code_c =   self.model_c(x_var).view(-1, self.fine_grained_categories)
 
         if type_ == 'logits':
             return code_z, code_b, code_p, code_c
@@ -560,13 +562,13 @@ class Bi_Dis_base(nn.Module):
 
 
 class Bi_Dis(nn.Module):
-    def __init__(self):
+    def __init__(self, z_dim, fine_grained_categories, super_categories):
         super(Bi_Dis, self).__init__()
 
-        self.BD_z = Bi_Dis_base( cfg.GAN.Z_DIM )
-        self.BD_b = Bi_Dis_base( cfg.FINE_GRAINED_CATEGORIES )
-        self.BD_p = Bi_Dis_base( cfg.SUPER_CATEGORIES )
-        self.BD_c = Bi_Dis_base( cfg.FINE_GRAINED_CATEGORIES ) 
+        self.BD_z = Bi_Dis_base( z_dim)
+        self.BD_b = Bi_Dis_base( fine_grained_categories )
+        self.BD_p = Bi_Dis_base( super_categories )
+        self.BD_c = Bi_Dis_base( fine_grained_categories ) 
 
 
     def forward(self, img, z_code, b_code, p_code, c_code):
