@@ -1,7 +1,8 @@
 state:
   mode: train
   load: False
-  version_hparams: [dataset_type, batch_size, timesteps]
+  version_hparams: [dataset_type, batch_size, base_size]
+  model_name: MixNMatch
 
 model:
   lr: 2e-4
@@ -10,11 +11,11 @@ model:
   num_defects: None
   num_categories: None
   defect_names: None
-  model_name: MixNMatch
   channels: 1
-  gan:
+  gan_cfg:
     z_dim: 100
     gf_dim: 64
+  bg_loss_wt: 10
   img_size:
   batch_size: 
 
@@ -23,9 +24,11 @@ dataset:
   camera: 3
   weighted_sampling: 0
   num_workers: 1
-  batch_size: 16
+  batch_size: 12
   img_size: 64
   dataset_type: Real_Good
+  loader: MixNMatchLoader
+  base_size: 64
   branch_num: 3
   transform:
 

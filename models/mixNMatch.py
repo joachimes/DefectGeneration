@@ -2,25 +2,27 @@ import torch
 from torch import nn
 from pytorch_lightning import LightningModule
 from models.mixNMatch_utils.train_first_stage import define_optimizers, load_network
-from models.mixNMatch_utils.utils import cal_gradient_penalty, child_to_parent
-from models.mixNMatch_utils.datasets import get_dataloader
+from models.mixNMatch_utils.utils import copy_G_params, CrossEntropy, cal_gradient_penalty, child_to_parent
 
 
 class MixNMatch(LightningModule):
-    def __init__(self, img_size, channels, gan_cfg, batch_size=8, num_defects=14, num_categories=8, **kwargs) -> None:
+    def __init__(self, gan_cfg, bg_loss_wt, batch_size=8, num_defects=14, num_categories=8, **kwargs) -> None:
         super(MixNMatch, self).__init__()
-        # self.model = Trainer(self.logger.save_dir)
         # prepare net, optimizer and loss
         self.fine_grained_categories = num_defects
         self.super_categories = num_categories
         self.gan_cfg = gan_cfg
+        self.bg_loss_wt = bg_loss_wt
         self.batch_size = batch_size
+
         self.netG, self.netsD, self.BD, self.encoder = load_network(self.gan_cfg, self.fine_grained_categories, self.super_categories, self.device)   
         self.RF_loss_un = nn.BCELoss(reduction='none')
         self.RF_loss = nn.BCELoss()   
         self.CE = CrossEntropy()        
         self.L1 = nn.L1Loss()
 
+        self.avg_param_G = copy_G_params(self.netG) 
+        
     
         # Other vars
         self.patch_stride = 4.0 
@@ -29,30 +31,30 @@ class MixNMatch(LightningModule):
 
         self.automatic_optimization = False
 
-        self.dataloader = get_dataloader() # Modify to my datashape
         
 
     def _common_step(self, batch, batch_idx):
-        batch_imgs, *_ = batch
-        if stage == 'train':
-            print('lol')
-        
-        opts = self.optimizers()
-        d_opt, bd_opt, ge_opt = opts[0], opts[1], opts[2]
+        # batch_imgs, *_ = batch
+
+        d_opt, bd_opt, ge_opt = None, None, None
+        if self.training:
+            opts = self.optimizers()
+            d_opt, bd_opt, ge_opt = opts[0], opts[1], opts[2]
         # prepare data              
-        self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c, self.warped_bbox = self.prepare_data(data)
+        self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c = self.prepare_data(batch)
         # forward for both E and G
         self.fake_z, self.fake_b, self.fake_p, self.fake_c = self.encoder( self.real_img, 'softmax' )              
         self.fake_imgs, self.fg_imgs, self.mk_imgs, self.fg_mk = self.netG( self.real_z, self.real_c, self.real_p, self.real_b, 'code'  )
 
-        # Update Discriminator networks in FineGAN      
+        # Update Discriminator networks in FineGAN
+        
         d_loss_0 = self.train_Dnet(0, d_opt)
         d_loss_2 = self.train_Dnet(2, d_opt)
         # Update Bi Discriminator
         bd_loss = self.train_BD(bd_opt)
         # Update Encoder and G network
         GE_loss = self.train_EG(ge_opt)
-        for avg_p, p in zip( avg_param_G, self.netG.parameters() ):
+        for avg_p, p in zip( self.avg_param_G, self.netG.parameters() ):
             avg_p.mul_(0.999).add_(0.001, p.data)
 
         return {f'GE_loss': GE_loss, f'BD_loss': bd_loss, f'd_loss_0': d_loss_0, f'd_loss_2': d_loss_2}
@@ -72,8 +74,9 @@ class MixNMatch(LightningModule):
         BD_avg_loss = torch.stack([x['BD_loss'] for x in outputs]).mean()
         D0_avg_loss = torch.stack([x['d_loss_0'] for x in outputs]).mean()
         D2_avg_loss = torch.stack([x['d_loss_2'] for x in outputs]).mean()
-        loss_dict = {f'train_GE_loss': GE_avg_loss, f'train_BD_loss': BD_avg_loss, f'train_D0_loss': D0_avg_loss, f'train_D2_loss': D2_avg_loss}
-        self.log_dict(loss_dict)
+        loss_dict = {f'val_GE_loss': GE_avg_loss, f'val_BD_loss': BD_avg_loss, f'val_D0_loss': D0_avg_loss, f'val_D2_loss': D2_avg_loss}
+        self.log_dict(loss_dict, logger=True)
+        self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss)
         
 
     def test_epoch_end(self, outputs):
@@ -88,18 +91,18 @@ class MixNMatch(LightningModule):
 
 
     def prepare_code(self):
-        free_z = torch.FloatTensor( self.batch_size, cfg.GAN.Z_DIM ).normal_(0, 1).to(self.device)
+        free_z = torch.FloatTensor( self.batch_size, self.gan_cfg.z_dim ).normal_(0, 1).to(self.device)
 
-        free_c = torch.zeros( self.batch_size, cfg.FINE_GRAINED_CATEGORIES , device=self.device)
-        idxs = torch.LongTensor( self.batch_size ).random_(0, cfg.FINE_GRAINED_CATEGORIES)
+        free_c = torch.zeros( self.batch_size, self.fine_grained_categories , device=self.device)
+        idxs = torch.LongTensor( self.batch_size ).random_(0, self.fine_grained_categories)
         for i, idx in enumerate(idxs):
             free_c[i,idx] = 1
-        free_p = torch.zeros( self.batch_size, cfg.SUPER_CATEGORIES , device=self.device)
-        idxs = torch.LongTensor( self.batch_size ).random_(0, cfg.SUPER_CATEGORIES)
+        free_p = torch.zeros( self.batch_size, self.super_categories , device=self.device)
+        idxs = torch.LongTensor( self.batch_size ).random_(0, self.super_categories)
         for i, idx in enumerate(idxs):
             free_p[i,idx] = 1
-        free_b = torch.zeros( self.batch_size, cfg.FINE_GRAINED_CATEGORIES , device=self.device)
-        idxs = torch.LongTensor( self.batch_size ).random_( 0, cfg.FINE_GRAINED_CATEGORIES )
+        free_b = torch.zeros( self.batch_size, self.fine_grained_categories , device=self.device)
+        idxs = torch.LongTensor( self.batch_size ).random_( 0, self.fine_grained_categories )
         for i, idx in enumerate(idxs):
             free_b[i,idx] = 1
 
@@ -109,27 +112,26 @@ class MixNMatch(LightningModule):
 
     def prepare_data(self, data):
 
-        real_img126, real_img, real_c, _, warped_bbox = data 
-        real_img126 = real_img126.to(self.device)
-        real_img = real_img.to(self.device)
-        for i in range(len(warped_bbox)):
-            warped_bbox[i] = warped_bbox[i].float(device=self.device)
+        real_img126, real_img, real_c = data 
+        # real_img126 = real_img126.to(self.device)
+        # real_img = real_img.to(self.device)
 
-        real_p = child_to_parent(real_c, cfg.FINE_GRAINED_CATEGORIES, cfg.SUPER_CATEGORIES , device=self.device)
-        real_z = torch.FloatTensor( self.batch_size, cfg.GAN.Z_DIM ).normal_(0, 1).to(device=self.device) 
+        real_p = child_to_parent(real_c, self.fine_grained_categories, self.super_categories)
+        real_z = torch.FloatTensor( self.batch_size, self.z_dim ).normal_(0, 1).to(device=self.device) 
         real_c = real_c.to(self.device)
         real_b = real_c             
 
-        return  real_img126, real_img, real_z, real_b, real_p, real_c, warped_bbox
+        return  real_img126, real_img, real_z, real_b, real_p, real_c
 
 
-    def train_Dnet(self, idx, d_opt):
+    def train_Dnet(self, idx, d_opt=None):
 
         assert(idx == 0 or idx == 2)
   
         # choose net and opt  
         netD = self.netsD[idx]
-        d_opt[idx].zero_grad()
+        if d_opt:
+            d_opt[idx].zero_grad()
         # choose real and fake images
         if idx == 0:
             real_img = self.real_img126
@@ -149,20 +151,20 @@ class MixNMatch(LightningModule):
             fake_label = torch.zeros_like(fake_prediction)     
             weights_real = torch.ones_like(real_prediction)
             
-            for i in range( self.batch_size ):
+            # for i in range( self.batch_size ):
 
-                x1 = self.warped_bbox[0][i]
-                x2 = self.warped_bbox[2][i]
-                y1 = self.warped_bbox[1][i]
-                y2 = self.warped_bbox[3][i]
+            #     x1 = self.warped_bbox[0][i]
+            #     x2 = self.warped_bbox[2][i]
+            #     y1 = self.warped_bbox[1][i]
+            #     y2 = self.warped_bbox[3][i]
 
-                a1 = max(torch.tensor(0).float().to(device=self.device), torch.ceil((x1 - self.recp_field)/self.patch_stride))
-                a2 = min(torch.tensor(self.n_out - 1).float().to(device=self.device), torch.floor((self.n_out - 1) - ((126 - self.recp_field) - x2)/self.patch_stride)) + 1
-                b1 = max(torch.tensor(0).float().to(device=self.device), torch.ceil( (y1 - self.recp_field)/self.patch_stride))
-                b2 = min(torch.tensor(self.n_out - 1).float().to(device=self.device), torch.floor((self.n_out - 1) - ((126 - self.recp_field) - y2)/self.patch_stride)) + 1
+            #     a1 = max(torch.tensor(0).float().to(device=self.device), torch.ceil((x1 - self.recp_field)/self.patch_stride))
+            #     a2 = min(torch.tensor(self.n_out - 1).float().to(device=self.device), torch.floor((self.n_out - 1) - ((126 - self.recp_field) - x2)/self.patch_stride)) + 1
+            #     b1 = max(torch.tensor(0).float().to(device=self.device), torch.ceil( (y1 - self.recp_field)/self.patch_stride))
+            #     b2 = min(torch.tensor(self.n_out - 1).float().to(device=self.device), torch.floor((self.n_out - 1) - ((126 - self.recp_field) - y2)/self.patch_stride)) + 1
 
-                if (x1 != x2 and y1 != y2):
-                    weights_real[i, :, a1.type(torch.int): a2.type(torch.int), b1.type(torch.int): b2.type(torch.int)] = 0.0
+            #     if (x1 != x2 and y1 != y2):
+            #         weights_real[i, :, a1.type(torch.int): a2.type(torch.int), b1.type(torch.int): b2.type(torch.int)] = 0.0
 
             norm_fact_real = weights_real.sum()
             norm_fact_fake = weights_real.shape[0]*weights_real.shape[1]*weights_real.shape[2]*weights_real.shape[3]
@@ -182,7 +184,7 @@ class MixNMatch(LightningModule):
             class_prediction_loss = self.RF_loss_un( class_prediction, weights_real ).mean()  
 
             # add three losses together 
-            D_loss = cfg.TRAIN.BG_LOSS_WT*(real_prediction_loss + fake_prediction_loss) + class_prediction_loss
+            D_loss = self.bg_loss_wt*(real_prediction_loss + fake_prediction_loss) + class_prediction_loss
       
 
         # # # # # # # #for child stage now (only real/fake discriminator)  # # # # # # # 
@@ -200,17 +202,17 @@ class MixNMatch(LightningModule):
             real_prediction_loss = self.RF_loss(real_prediction, real_label)         
             fake_prediction_loss = self.RF_loss(fake_prediction, fake_label)
             D_loss = real_prediction_loss+fake_prediction_loss
-        
-        self.manual_backward(D_loss)
-        d_opt.step()
+        if d_opt:
+            self.manual_backward(D_loss)
+            d_opt.step()
 
         return D_loss
 
 
 
-    def train_BD(self, bd_opt):
-
-        bd_opt.zero_grad()
+    def train_BD(self, bd_opt=None):
+        if bd_opt:
+            bd_opt.zero_grad()
 
         # make prediction on pairs 
         pred_enc_z, pred_enc_b, pred_enc_p, pred_enc_c = self.BD(  self.real_img, self.fake_z.detach(), self.fake_b.detach(), self.fake_p.detach(), self.fake_c.detach() )
@@ -221,15 +223,17 @@ class MixNMatch(LightningModule):
         penalty = cal_gradient_penalty( self.BD, real_data, fake_data, self.device, type='mixed', constant=1.0)
 
         D_loss =  -( pred_enc_z.mean()+pred_enc_b.mean()+pred_enc_p.mean()+pred_enc_c.mean()  ) + ( pred_gen_z.mean()+pred_gen_b.mean()+pred_gen_p.mean()+pred_gen_c.mean() ) + penalty*10
-        self.manual_backward(D_loss)
-        bd_opt.step()
+        if bd_opt:
+            self.manual_backward(D_loss)
+            bd_opt.step()
         return D_loss
       
 
 
-    def train_EG(self, ge_opt):
+    def train_EG(self, ge_opt=None):
 
-        ge_opt.zero_grad()
+        if ge_opt:
+            ge_opt.zero_grad()
 
         # reconstruct code and calculate loss 
         self.rec_p, _ = self.netsD[1]( self.fg_mk[0])
@@ -250,7 +254,7 @@ class MixNMatch(LightningModule):
     
         # aux and backgroud real/fake loss
         self.bg_class_pred, self.bg_rf_pred = self.netsD[0]( self.fake_imgs[0] ) 
-        bg_rf_loss = self.RF_loss( self.bg_rf_pred, torch.ones_like( self.bg_rf_pred ) )*cfg.TRAIN.BG_LOSS_WT
+        bg_rf_loss = self.RF_loss( self.bg_rf_pred, torch.ones_like( self.bg_rf_pred ) )* self.bg_loss_wt
         bg_class_loss = self.RF_loss( self.bg_class_pred, torch.ones_like( self.bg_class_pred ) )
 
         # child image real/fake loss  
@@ -263,7 +267,9 @@ class MixNMatch(LightningModule):
         fool_BD_loss = ( pred_enc_z.mean()+pred_enc_b.mean()+pred_enc_p.mean()+pred_enc_c.mean()  ) - ( pred_gen_z.mean()+pred_gen_b.mean()+pred_gen_p.mean()+pred_gen_c.mean() ) 
              
         EG_loss =  (p_code_loss+c_code_loss) + (bg_rf_loss+bg_class_loss) + child_rf_loss + fool_BD_loss + (5*z_pred_loss+5*b_pred_loss+10*p_pred_loss+10*c_pred_loss)
-        self.manual_backward(EG_loss)
+        
+        if ge_opt:
+            self.manual_backward(EG_loss)
+            ge_opt.step()
 
-        ge_opt.step()
         return EG_loss

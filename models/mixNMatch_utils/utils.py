@@ -1,4 +1,4 @@
-from config import cfg
+# from config import cfg
 import numpy as np
 import os
 import time
@@ -8,6 +8,23 @@ import torchvision.utils as vutils
 import sys
 import shutil
 import torch.nn as nn
+from copy import deepcopy
+
+def copy_G_params(model):
+    flatten = deepcopy(list(p.data for p in model.parameters()))
+    return flatten
+
+
+class CrossEntropy():
+    def __init__(self):
+        self.code_loss = nn.CrossEntropyLoss() 
+    def __call__(self, prediction, label):
+        # check label if hard (onehot)
+        if label.max(dim=1)[0].min() == 1:
+            return self.code_loss(prediction, torch.nonzero( label.long() )[:, 1] )
+        else:        
+            log_prediction = torch.log_softmax(prediction, dim=1)    
+            return (- log_prediction*label).sum(dim=1).mean(dim=0)
 
 def weights_init(m):
     classname = m.__class__.__name__
