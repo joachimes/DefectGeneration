@@ -18,11 +18,11 @@ def main(cfg: DictConfig) -> None:
     print(cfg.dataset)
     
     dm = VialDataModule(**cfg.dataset)
-    category_num = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
-    cfg.state.version_hparams.append(category_num)
-    cfg.model[category_num] = dm.__getattribute__(category_num)
-    category_names = 'class_names' if 'class_names' in cfg.model else 'defect_names'
-    cfg.model[category_names] = dm.__getattribute__(category_names)
+    for category_attribute in ['num_classes', 'num_defects', 'class_names', 'defect_names']:
+        if category_attribute in cfg.model:
+            cfg.model[category_attribute] = dm.__getattribute__(category_attribute)
+            if 'num_' in category_attribute:
+                cfg.state.version_hparams.append(category_attribute)
     fill_none(cfg)
 
     log_folder = 'tb_logs'

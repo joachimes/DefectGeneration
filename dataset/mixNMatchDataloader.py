@@ -119,10 +119,10 @@ class MixNMatchLoader(BaseVialLoader):
         self.data = []
         # self.bbox = self.load_bbox()
         self.filenames = self.load_filenames()
-        if setting == 'train':
-            self.iterator = self.prepair_training_pairs
-        else:
+        if setting == 'test':
             self.iterator = self.prepair_test_pairs
+        else:
+            self.iterator = self.prepair_training_pairs
 
 
     def load_filenames(self):

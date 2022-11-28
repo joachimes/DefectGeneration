@@ -9,7 +9,7 @@ model:
   patience: 100
   max_epochs: 304
   num_defects: None
-  num_categories: None
+  num_classes: None
   defect_names: None
   channels: 1
   gan_cfg:

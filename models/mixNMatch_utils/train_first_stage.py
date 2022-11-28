@@ -31,11 +31,11 @@ def define_optimizers( netG, netsD, BD, encoder ):
   
     optimizerBD = optim.Adam( BD.parameters(), lr=2e-4, betas=(0.5, 0.999))
   
-    params = chain( netG.parameters(), encoder.parameters(), netsD[1].parameters(), netsD[2].module.code_logits.parameters() )       
+    params = chain( netG.parameters(), encoder.parameters(), netsD[1].parameters(), netsD[2].code_logits.parameters() )       
     optimizerGE = optim.Adam(  params , lr=2e-4, betas=(0.5, 0.999) ) 
  
    
-    return *optimizersD, optimizerBD, optimizerGE
+    return optimizersD, optimizerBD, optimizerGE
 
 
 

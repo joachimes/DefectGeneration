@@ -1,16 +1,15 @@
 import torch
 from torch import nn
-from pytorch_lightning import LightningModule
 from models.mixNMatch_utils.train_first_stage import define_optimizers, load_network
 from models.mixNMatch_utils.utils import copy_G_params, CrossEntropy, cal_gradient_penalty, child_to_parent
+from models.train import LitTrainer
 
-
-class MixNMatch(LightningModule):
-    def __init__(self, gan_cfg, bg_loss_wt, batch_size=8, num_defects=14, num_categories=8, **kwargs) -> None:
+class MixNMatch(LitTrainer):
+    def __init__(self, gan_cfg, bg_loss_wt, batch_size=8, num_defects=14, num_classes=8, **kwargs) -> None:
         super(MixNMatch, self).__init__()
         # prepare net, optimizer and loss
         self.fine_grained_categories = num_defects
-        self.super_categories = num_categories
+        self.super_categories = num_classes
         self.gan_cfg = gan_cfg
         self.bg_loss_wt = bg_loss_wt
         self.batch_size = batch_size
@@ -39,9 +38,9 @@ class MixNMatch(LightningModule):
         d_opt, bd_opt, ge_opt = None, None, None
         if self.training:
             opts = self.optimizers()
-            d_opt, bd_opt, ge_opt = opts[0], opts[1], opts[2]
+            bd_opt, ge_opt, *d_opt = opts[0], opts[1], opts[2], opts[3]
         # prepare data              
-        self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c = self.prepare_data(batch)
+        self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c = self.prepare_epoch_data(batch)
         # forward for both E and G
         self.fake_z, self.fake_b, self.fake_p, self.fake_c = self.encoder( self.real_img, 'softmax' )              
         self.fake_imgs, self.fg_imgs, self.mk_imgs, self.fg_mk = self.netG( self.real_z, self.real_c, self.real_p, self.real_b, 'code'  )
@@ -87,7 +86,7 @@ class MixNMatch(LightningModule):
 
     def configure_optimizers(self):
         optimizersD, optimizerBD, optimizerGE = define_optimizers(self.netG, self.netsD, self.BD, self.encoder)
-        return optimizersD, optimizerBD, optimizerGE
+        return [optimizerBD, optimizerGE, optimizersD[0], optimizersD[2]]
 
 
     def prepare_code(self):
@@ -110,7 +109,7 @@ class MixNMatch(LightningModule):
 
     
 
-    def prepare_data(self, data):
+    def prepare_epoch_data(self, data):
 
         real_img126, real_img, real_c = data 
         # real_img126 = real_img126.to(self.device)
