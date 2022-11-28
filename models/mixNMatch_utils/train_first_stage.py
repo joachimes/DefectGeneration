@@ -61,11 +61,11 @@ def load_network(gan_cfg, fine_grained_categories, super_categories, device):
     encoder = Encoder(z_dim=gan_cfg.z_dim, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
     encoder.apply(weights_init)
    
-    netG.to(device)  
-    encoder.to(device)  
-    BD.to(device)
+    netG = netG.to(device)  
+    encoder = encoder.to(device)  
+    BD = BD.to(device)
     for i in range(3):
-        netsD[i].to(device)
+        netsD[i] = netsD[i].to(device)
 
     return netG, netsD, BD, encoder
   
