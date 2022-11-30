@@ -14,25 +14,25 @@ class MixNMatch(LitTrainer):
         self.bg_loss_wt = bg_loss_wt
         self.batch_size = batch_size
 
-        self.netG, self.netsD, self.BD, self.encoder = load_network(self.gan_cfg, self.fine_grained_categories, self.super_categories, self.device)   
+        self.netG, self.netD0, self.netD1, self.netD2, self.BD, self.encoder = load_network(self.gan_cfg, self.fine_grained_categories, self.super_categories)
         self.RF_loss_un = nn.BCELoss(reduction='none')
-        self.RF_loss = nn.BCELoss()   
-        self.CE = CrossEntropy()        
+        self.RF_loss = nn.BCELoss()
+        self.CE = CrossEntropy()
         self.L1 = nn.L1Loss()
 
-        self.avg_param_G = copy_G_params(self.netG) 
+        # self.avg_param_G = copy_G_params(self.netG)
         
     
         # Other vars
         self.patch_stride = 4.0 
         self.n_out = 24
-        self.recp_field = 34   
+        self.recp_field = 34
 
         self.automatic_optimization = False
 
         
 
-    def _common_step(self, batch, batch_idx):
+    def _common_step(self, batch, batch_idx, optimizer_idx=None):
         # batch_imgs, *_ = batch
 
         d_opt, bd_opt, ge_opt = None, None, None
@@ -53,8 +53,8 @@ class MixNMatch(LitTrainer):
         bd_loss = self.train_BD(bd_opt)
         # Update Encoder and G network
         GE_loss = self.train_EG(ge_opt)
-        for avg_p, p in zip( self.avg_param_G, self.netG.parameters() ):
-            avg_p.mul_(0.999).add_(0.001, p.data)
+        # for avg_p, p in zip( self.avg_param_G, self.netG.parameters() ):
+        #     avg_p.mul_(0.999).add_(p.data, alpha=0.001)
 
         return {f'GE_loss': GE_loss, f'BD_loss': bd_loss, f'd_loss_0': d_loss_0, f'd_loss_2': d_loss_2}
         
@@ -85,7 +85,7 @@ class MixNMatch(LitTrainer):
 
 
     def configure_optimizers(self):
-        optimizersD, optimizerBD, optimizerGE = define_optimizers(self.netG, self.netsD, self.BD, self.encoder)
+        optimizersD, optimizerBD, optimizerGE = define_optimizers(self.netG, [self.netD0, self.netD1, self.netD2], self.BD, self.encoder)
         return [optimizerBD, optimizerGE, optimizersD[0], optimizersD[2]]
 
 
@@ -128,7 +128,7 @@ class MixNMatch(LitTrainer):
         assert(idx == 0 or idx == 2)
   
         # choose net and opt  
-        netD = self.netsD[idx]
+        netD = self.__getattr__(f'netD{idx}')
         if d_opt:
             d_opt[idx].zero_grad()
         # choose real and fake images
@@ -235,8 +235,8 @@ class MixNMatch(LitTrainer):
             ge_opt.zero_grad()
 
         # reconstruct code and calculate loss 
-        self.rec_p, _ = self.netsD[1]( self.fg_mk[0])
-        self.rec_c, _ = self.netsD[2]( self.fg_mk[1])
+        self.rec_p, _ = self.netD1( self.fg_mk[0])
+        self.rec_c, _ = self.netD2( self.fg_mk[1])
         p_code_loss = self.CE( self.rec_p , self.real_p )
         c_code_loss = self.CE( self.rec_c,  self.real_c )
 
@@ -252,12 +252,12 @@ class MixNMatch(LitTrainer):
     
     
         # aux and backgroud real/fake loss
-        self.bg_class_pred, self.bg_rf_pred = self.netsD[0]( self.fake_imgs[0] ) 
+        self.bg_class_pred, self.bg_rf_pred = self.netD0( self.fake_imgs[0] ) 
         bg_rf_loss = self.RF_loss( self.bg_rf_pred, torch.ones_like( self.bg_rf_pred ) )* self.bg_loss_wt
         bg_class_loss = self.RF_loss( self.bg_class_pred, torch.ones_like( self.bg_class_pred ) )
 
         # child image real/fake loss  
-        _, self.child_rf_pred = self.netsD[2]( self.fake_imgs[-1] )
+        _, self.child_rf_pred = self.netD2( self.fake_imgs[-1] )
         child_rf_loss = self.RF_loss( self.child_rf_pred, torch.ones_like(self.child_rf_pred) )
   
         # fool BD loss

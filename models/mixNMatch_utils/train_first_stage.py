@@ -47,7 +47,7 @@ def load_params(model, new_param):
 
 
 
-def load_network(gan_cfg, fine_grained_categories, super_categories, device):
+def load_network(gan_cfg, fine_grained_categories, super_categories):
 
     netG = G_NET(gan_cfg=gan_cfg, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
     netG.apply(weights_init)
@@ -61,13 +61,13 @@ def load_network(gan_cfg, fine_grained_categories, super_categories, device):
     encoder = Encoder(z_dim=gan_cfg.z_dim, fine_grained_categories=fine_grained_categories, super_categories=super_categories)
     encoder.apply(weights_init)
    
-    netG = netG.to(device)  
-    encoder = encoder.to(device)  
-    BD = BD.to(device)
-    for i in range(3):
-        netsD[i] = netsD[i].to(device)
+    # netG = netG.to(device)  
+    # encoder = encoder.to(device)  
+    # BD = BD.to(device)
+    # for i in range(3):
+        # netsD[i] = netsD[i].to(device)
 
-    return netG, netsD, BD, encoder
+    return netG, netsD[0], netsD[1], netsD[2], BD, encoder
   
 
 

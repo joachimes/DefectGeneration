@@ -146,6 +146,10 @@ def cal_gradient_penalty(netD, real_data, fake_data, device, type='mixed', const
     # feed into D
     disc_interpolates = netD(*interpolatesv)
 
+    # require grad
+    for i in range( len(disc_interpolates) ):
+        disc_interpolates[i].requires_grad_(True)
+    
     # cal penalty
 
     gradient_penalty = 0

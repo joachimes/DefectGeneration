@@ -21,12 +21,12 @@ model:
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/Data
-  camera: 3
+  camera: 5
   weighted_sampling: 0
   num_workers: 1
   batch_size: 12
   img_size: 64
-  dataset_type: Real_Good
+  dataset_type: Real_yeet
   loader: MixNMatchLoader
   base_size: 64
   branch_num: 3
