@@ -1,0 +1,27 @@
+state:
+  mode: train
+  load: False
+  version_hparams: [dataset_type, batch_size]
+  model_name: VariationalAutoencoder
+
+model:
+  lr: 2e-4
+  patience: 100
+  max_epochs: 304
+  num_defects: None
+  defect_names: None
+  channels: 1
+  img_size:
+  batch_size: 
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/Data
+  camera: 5
+  weighted_sampling: 0
+  num_workers: 1
+  batch_size: 1
+  img_size: 256
+  dataset_type: Real_yeet
+  transform:
+
+      
