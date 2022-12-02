@@ -11,6 +11,8 @@ model:
   num_defects: None
   defect_names: None
   channels: 1
+  latent_dim: 32
+  dim_mults: [1,2,4,8]
   img_size:
   batch_size: 
 
