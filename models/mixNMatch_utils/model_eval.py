@@ -16,7 +16,7 @@ class GLU(nn.Module):
         nc = x.size(1)
         assert nc % 2 == 0, 'channels dont divide 2!'
         nc = int(nc/2)
-        return x[:, :nc] * F.sigmoid(x[:, nc:])
+        return x[:, :nc] * torch.sigmoid(x[:, nc:])
 
 
 def conv3x3(in_planes, out_planes):
