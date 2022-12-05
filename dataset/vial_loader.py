@@ -141,7 +141,7 @@ class VialDataModule(LightningDataModule):
         super().__init__()
         self.data_path = data_path
         # open yaml file
-        data_yaml_path = osp.join('config', 'data_config', f'cam{camera}', dataset_type+'.yaml')
+        data_yaml_path = osp.join('config', 'data_config', f'CAM{camera}', dataset_type+'.yaml')
         with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
         self.transform = transform if transform else GenerativeTransform(img_size=img_size, mean=mean, std=std)
