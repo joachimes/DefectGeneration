@@ -5,16 +5,17 @@ state:
   model_name: DiffusionNet
 
 model:
-  lr: 1e-3
+  lr: 3e-4
   patience: 1000
   max_epochs: 3000
   num_classes: None
   class_names: None
-  dim_mults: [1, 2, 2, 2]
+  model_name: DiffusionNet
+  dim_mults: [1, 2, 3]
   channels: 3
-  timesteps: 200
-  batch_size:
-  img_size:
+  timesteps: 150
+  batch_size: 256
+  img_size: 64
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
@@ -23,6 +24,8 @@ dataset:
   num_workers: 10
   batch_size: 256
   img_size: 64
+  mean: [0.5, 0.5, 0.5]
+  std: [0.5, 0.5, 0.5]
   dataset_type: Real_Good
   transform:
 

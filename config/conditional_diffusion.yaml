@@ -5,25 +5,28 @@ state:
   version_hparams: [dataset_type, batch_size, timesteps]
 
 model:
-  lr: 1e-3
-  patience: 100
-  max_epochs: 304
+  lr: 5e-4
+  weight_decay: 1e-6
+  patience: 1000
+  max_epochs: 3000
   num_defects: None
   defect_names: None
-  dim_mults: [1, 2]
+  dim_mults: [1, 2, 2, 2]
   channels: 3
   timesteps: 200
   img_size:
   batch_size:
 
 dataset:
-  data_path: /nn-seidenader-gentofte/TJSD/Data
-  camera: 3
-  weighted_sampling: 0
-  num_workers: 1
-  batch_size: 16
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
+  weighted_sampling: 1
+  num_workers: 8
+  batch_size: 1536
   img_size: 32
-  dataset_type: Real_Good
+  mean: [0.5, 0.5, 0.5]
+  std: [0.5, 0.5, 0.5]
+  dataset_type: Synthetic
   transform:
 
       
