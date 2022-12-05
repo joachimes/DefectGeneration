@@ -38,7 +38,7 @@ class MixNMatch(LitTrainer):
         d_opt, bd_opt, ge_opt = None, None, None
         if self.training:
             opts = self.optimizers()
-            bd_opt, ge_opt, *d_opt = opts[0], opts[1], opts[2], opts[3]
+            bd_opt, ge_opt, *d_opt = opts[0], opts[1], opts[2], None, opts[3]
         # prepare data              
         self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c = self.prepare_epoch_data(batch)
         # forward for both E and G
@@ -75,7 +75,7 @@ class MixNMatch(LitTrainer):
         D2_avg_loss = torch.stack([x['d_loss_2'] for x in outputs]).mean()
         loss_dict = {f'val_GE_loss': GE_avg_loss, f'val_BD_loss': BD_avg_loss, f'val_D0_loss': D0_avg_loss, f'val_D2_loss': D2_avg_loss}
         self.log_dict(loss_dict, logger=True)
-        self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss)
+        self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss, sync_dist=True)
         
 
     def test_epoch_end(self, outputs):
@@ -203,7 +203,7 @@ class MixNMatch(LitTrainer):
             D_loss = real_prediction_loss+fake_prediction_loss
         if d_opt:
             self.manual_backward(D_loss)
-            d_opt.step()
+            d_opt[idx].step()
 
         return D_loss
 

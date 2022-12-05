@@ -47,7 +47,7 @@ def main(cfg: DictConfig) -> None:
                                     , mode='min'))
     trainer = Trainer(
         accelerator="gpu",
-        devices=1 if is_available() else 0,
+        devices=-1 if is_available() else 0,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
         callbacks=callbacks,

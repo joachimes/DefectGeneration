@@ -20,13 +20,13 @@ model:
   batch_size: 
 
 dataset:
-  data_path: /nn-seidenader-gentofte/TJSD/Data
-  camera: 5
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
   weighted_sampling: 0
-  num_workers: 1
+  num_workers: 14
   batch_size: 12
   img_size: 64
-  dataset_type: Real_yeet
+  dataset_type: Real_Synthetic
   loader: MixNMatchLoader
   base_size: 64
   branch_num: 3

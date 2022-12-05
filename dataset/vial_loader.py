@@ -11,14 +11,14 @@ from dataset.transforms import GenerativeTransform, ImageTransform
 
 
 class VialDataModule(LightningDataModule):
-    def __init__(self, data_path, dataset_type, camera, transform, img_size, batch_size, num_workers, weighted_sampling, max_img_class=10_000, loader=None, **kwargs) -> None:
+    def __init__(self, data_path, dataset_type, camera, transform, img_size, batch_size, num_workers, weighted_sampling, max_img_class=10_000, loader=None, mean=[0.5], std=[0.5], **kwargs) -> None:
         super().__init__()
         self.data_path = data_path
         # open yaml file
-        data_yaml_path = osp.join('config', 'data_config', f'cam{camera}', dataset_type+'.yaml')
+        data_yaml_path = osp.join('config', 'data_config', f'CAM{camera}', dataset_type+'.yaml')
         with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
-        self.transform = transform if transform else GenerativeTransform(img_size=img_size)
+        self.transform = transform if transform else GenerativeTransform(img_size=img_size, mean=mean, std=std)
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.vial_loader = {}
