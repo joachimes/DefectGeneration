@@ -75,7 +75,7 @@ class MixNMatch(LitTrainer):
         D2_avg_loss = torch.stack([x['d_loss_2'] for x in outputs]).mean()
         loss_dict = {f'val_GE_loss': GE_avg_loss, f'val_BD_loss': BD_avg_loss, f'val_D0_loss': D0_avg_loss, f'val_D2_loss': D2_avg_loss}
         self.log_dict(loss_dict, logger=True)
-        self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss)
+        self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss, sync_dist=True)
         
 
     def test_epoch_end(self, outputs):
