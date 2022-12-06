@@ -3,6 +3,8 @@ state:
   load: False
   version_hparams: [dataset_type, batch_size, base_size]
   model_name: MixNMatch
+  gpu: [0]
+  precision:
 
 model:
   lr: 2e-4

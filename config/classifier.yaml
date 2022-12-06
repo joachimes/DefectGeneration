@@ -3,6 +3,8 @@ state:
   load: False
   model_name: Efficientnet
   version_hparams: [dataset_type, batch_size, max_epochs]
+  gpu: [0]
+  precision:
 
 model:
   lr: 1e-5

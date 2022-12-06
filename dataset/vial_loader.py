@@ -45,7 +45,7 @@ class VialDataModule(LightningDataModule):
                 raise Exception(f"Defect {k} not found in {split} split")
 
     def train_dataloader(self):
-        return DataLoader(self.vial_loader['train'], batch_size=self.batch_size, num_workers=self.num_workers, sampler=self.sampler, persistent_workers=True, pin_memory=True)
+        return DataLoader(self.vial_loader['train'], batch_size=self.batch_size, num_workers=self.num_workers, sampler=self.sampler, persistent_workers=True, pin_memory=True, drop_last=True)
     
 
     def val_dataloader(self):

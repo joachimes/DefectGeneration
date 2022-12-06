@@ -15,11 +15,11 @@ class Efficientnet(LitTrainer):
         self.loss = nn.CrossEntropyLoss()
         self.model, self.input_size = self.initialize_model(num_classes, feature_extract)
         # Test Metrics
-        self.test_acc = tm.Accuracy(num_classes=num_classes, average='macro')
-        self.test_f1 = tm.F1Score(num_classes=num_classes, average='macro')
-        self.test_auc = tm.AUROC(num_classes=num_classes, average='macro')
-        self.test_prec = tm.Precision(num_classes=num_classes, average='macro')
-        self.test_recall = tm.Recall(num_classes=num_classes, average='macro')
+        self.test_acc = tm.Accuracy(num_classes=num_classes, average='macro', task='multiclass')
+        self.test_f1 = tm.F1Score(num_classes=num_classes, average='macro', task='multiclass')
+        self.test_auc = tm.AUROC(num_classes=num_classes, average='macro', task='multiclass')
+        self.test_prec = tm.Precision(num_classes=num_classes, average='macro', task='multiclass')
+        self.test_recall = tm.Recall(num_classes=num_classes, average='macro', task='multiclass')
 
         self.save_hyperparameters(ignore=[
             'feature_extract'

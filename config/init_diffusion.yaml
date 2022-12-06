@@ -3,6 +3,8 @@ state:
   load: False
   version_hparams: [dataset_type, batch_size, timesteps]
   model_name: DiffusionNet
+  gpu: [0]
+  precision:
 
 model:
   lr: 3e-4
