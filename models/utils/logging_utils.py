@@ -52,7 +52,7 @@ def confusion_matrix_to_img(class_names, computed_confusion):
 def confusion_matrix_log(self, outputs, labels, stage):
     # see https://github.com/Lightning-AI/metrics/blob/ff61c482e5157b43e647565fa0020a4ead6e9d61/docs/source/pages/lightning.rst
     # each forward pass, thus leading to wrong accumulation. In practice do the following:
-    conf_matrix = tm.ConfusionMatrix(num_classes=self.num_classes).to(self.device)
+    conf_matrix = tm.ConfusionMatrix(num_classes=self.num_classes, task='multiclass').to(self.device)
     
     conf_matrix(outputs, labels)
     computed_confusion = conf_matrix.compute().detach().cpu().numpy().astype(int)

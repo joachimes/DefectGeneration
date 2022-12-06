@@ -3,6 +3,8 @@ state:
   load: False
   model_name: ConditionalDiffusionNet
   version_hparams: [dataset_type, batch_size, timesteps]
+  gpu: [0]
+  precision:
 
 model:
   lr: 5e-4

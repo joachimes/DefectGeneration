@@ -116,7 +116,7 @@ class MixNMatch(LitTrainer):
         # real_img = real_img.to(self.device)
 
         real_p = child_to_parent(real_c, self.fine_grained_categories, self.super_categories)
-        real_z = torch.FloatTensor( self.batch_size, self.gan_cfg.z_dim ).normal_(0, 1).to(device=self.device) 
+        real_z = torch.FloatTensor( real_c.shape[0], self.gan_cfg.z_dim ).normal_(0, 1).to(device=self.device) 
         real_c = real_c.to(self.device)
         real_b = real_c             
 

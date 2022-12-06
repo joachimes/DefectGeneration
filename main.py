@@ -47,10 +47,11 @@ def main(cfg: DictConfig) -> None:
                                     , mode='min'))
     trainer = Trainer(
         accelerator="gpu",
-        devices=-1 if is_available() else 0,
+        devices=cfg.state.gpu if cfg.state.gpu and is_available() else 0,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
         callbacks=callbacks,
+        precision=16 if cfg.state.precision == 'mixed' else 32,
         # profiler='simple'
     )
     weight_path = None
