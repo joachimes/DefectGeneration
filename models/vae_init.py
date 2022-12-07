@@ -51,18 +51,18 @@ class VariationalAutoEncoder(LitTrainer):
     def log_samples(self):
 
         if self.fixed_imgs == None:
-            self.fixed_imgs, *_ = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
-            grid = make_grid((self.fixed_imgs[:16] + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'reconstructred_images', grid, 0)
+            self.fixed_imgs, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+            grid = make_grid((self.fixed_imgs[:16] + 1) * 0.5, nrow=2)
+            self.logger.experiment.add_image(f'val_imgs/real', grid, 0)
 
         xrec, posterior = self(self.fixed_imgs[:16].to(self.device))
 
-        grid = make_grid((xrec + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'reconstructred_images', grid, self.current_epoch)
+        grid = make_grid((xrec + 1) * 0.5, nrow=2)
+        self.logger.experiment.add_image(f'val_imgs/reconstructred', grid, self.global_step)
 
         rnd_samples = self.decode(torch.randn_like(posterior.sample()))
-        grid = make_grid((rnd_samples + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'samples_images', grid, self.current_epoch)
+        grid = make_grid((rnd_samples + 1) * 0.5, nrow=2)
+        self.logger.experiment.add_image(f'val_imgs/sampled', grid, self.global_step)
 
         
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -76,6 +76,9 @@ class VariationalAutoEncoder(LitTrainer):
                                             last_layer=self.get_last_layer(), split="train")
             self.log("aeloss", aeloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
             self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+            if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
+                print(f'logging samples at step {self.global_step}')
+                self.log_samples()
             return aeloss
 
         if optimizer_idx == 1:
