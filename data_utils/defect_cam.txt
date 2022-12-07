@@ -1,0 +1,50 @@
+A1,Loose cut cap,Loose cut cap,LCC,CAM2
+A1,Cap not crimped,Cap not crimped,CnC,CAM2
+A2,Fixed cut cap,Fixed cut cap,FCC,CAM2
+A2,Incomplete crimping but fixed cap,Incomplete crimping but fixed cap,ICFC,CAM2
+A2,Beak,Beak,B,CAM2
+A3,Cosmetic cap defects,Cap crimped as a bottle top,CCD,CAM2
+A3,Loose snap-off,Loose snap-off,LSO,CAM2
+B1,Missing snap-off (Classification),Missing snap-off,MSF,CAM2
+B1,Missing Stopper (Classification),Missing Stopper,MST,CAM2
+B2,Metal smear,Metal smear,MESM,CAM2
+B2,Discoloration on stopper,Discoloration on side of stopper,DIST,CAM2
+C1,Chip,Chip side of glass,ChipS,CAM3
+C1,Chip,Chip bottom,ChipB,CAM5
+C1,Chip,Chip neck,ChipSh,CAM2
+C1,Chip,Chip shoulder,ChipSh,CAM3
+C1,Crack,Crack side above FD,CrackAbove,CAM3
+C1,Crack,Crack at neck,CrackAbove_neck,CAM2
+C1,Crack,Crack side at FD,CrackAtFD,CAM3
+C1,Crack,Crack bottom,CrackAtFD,CAM5
+C2,Surface scratches non-penetrating,Surface scratches neck,SSNPDNeck,CAM2
+C2,Surface scratches non-penetrating,Surface scratches side,SSNPDCake,CAM3
+C2,Foreign material/discolorasation outside vial,Foreign material/discolorasation outside vial,FMOV,CAM3
+D1,Fibre,Fibre on stopper,FOST,CAM2
+D1,Other Particle,Glass particle on stopper,GPST,CAM2
+D1,Other Particle,Glass particle top of cake,GPCake,CAM6
+D1,Other Particle,Glass particle side of cake,GPSCake,CAM3
+D1,Other Particle,Glass particle bottome of cake,GPBotCake,CAM5
+D1,Other Particle,Steel particle on stopper,SPST,CAM2
+D1,Other Particle,Steel particle on top of FD cake,SPCake,CAM6
+D1,Other Particle,Steel particle at side of FD cale,SPSCake,CAM3
+D1,Other Particle,Steel particle at bottom of FD cake,SPBotCake,CAM5
+D1,Other Particle,Dark Polymer on stopper,DPPST,CAM2
+D1,Other Particle,Dark Polymer top of cake,DPCake,CAM6
+D1,Other Particle,Dark Polymer side of cake,DPSCake,CAM3
+D1,Other Particle,Dark Polymer bottome of cake,DPBotCake,CAM5
+D1,Other Particle,Foreign Materials inside of Vial,FMI,CAM3
+E1,Too low filling volume,Too low filling volume,TLF,CAM3
+E1,Too high filling volume,Too high filling volume,THF,CAM3
+E2,Empty vial,Empty vial,EV,CAM3
+F1,Collapsed cake,Collapsed cake,CC,CAM6
+F1,Solution not freeze-dried,Solution not freeze-dried,SnFD,CAM3
+F3,Slanting freeze-drying cake,Slanting freeze-drying cake,SLFD,CAM3
+F3,Lifted freeze drying cake (can be classified as THF),Lifted freeze drying cake,LFD,CAM3
+G1,Product on stopper,Product on stopper,PST,CAM2
+
+
+
+
+
+
