@@ -5,7 +5,7 @@ state:
   model_name: VariationalAutoEncoder
   monitor: val_rec_loss
   gpu: [0]
-  precision: 16
+  precision: mixed
 
 model:
   lr: 2e-4
@@ -34,10 +34,10 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 8
+  num_workers: 4
   batch_size: 6
   img_size: 256
-  dataset_type: Synthetic
+  dataset_type: Synthetic_generative
   transform:
 
       
