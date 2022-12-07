@@ -1,3 +1,4 @@
+cd ../
 python main.py --config-name classifier dataset.camera=2 dataset.dataset_type=Real_Synthetic_all
 python main.py --config-name classifier dataset.camera=2 dataset.dataset_type=Real_Synthetic
 python main.py --config-name classifier dataset.camera=2 dataset.dataset_type=Synthetic_pure

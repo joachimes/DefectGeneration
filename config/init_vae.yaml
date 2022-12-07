@@ -2,28 +2,42 @@ state:
   mode: train
   load: False
   version_hparams: [dataset_type, batch_size]
-  model_name: VariationalAutoencoder
+  model_name: VariationalAutoEncoder
+  monitor: val_rec_loss
+  gpu: [0]
+  precision: 16
 
 model:
   lr: 2e-4
-  patience: 100
-  max_epochs: 304
+  patience: 200
+  max_epochs: 500
   num_defects: None
   defect_names: None
-  channels: 1
   latent_dim: 32
-  dim_mults: [1,2,4,8]
-  img_size:
-  batch_size: 
+  losscfg:
+    disc_start: 50001
+    kl_weight: 1.0e-06
+    disc_weight: 0.5
+  AEcfg:
+    double_z: true
+    z_channels: 32
+    img_size: 256
+    channels: 3
+    out_ch: 3
+    init_dim: 128
+    dim_mult: [1, 2, 4]
+    num_res_blocks: 2
+    attn_resolutions: [16, 8]
+    resnet_block_groups: 8
 
 dataset:
-  data_path: /nn-seidenader-gentofte/TJSD/Data
-  camera: 5
-  weighted_sampling: 0
-  num_workers: 1
-  batch_size: 1
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
+  weighted_sampling: 1
+  num_workers: 8
+  batch_size: 6
   img_size: 256
-  dataset_type: Real_yeet
+  dataset_type: Synthetic
   transform:
 
       
