@@ -141,3 +141,37 @@ class VariationalAutoEncoder(LitTrainer):
 
     def get_last_layer(self):
         return self.decoder.conv_out.weight
+
+
+class VAEInterface(VariationalAutoEncoder):
+    def __init__(self, embed_dim, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.embed_dim = embed_dim
+
+    def init_from_ckpt(self, path, ignore_keys=list()):
+        sd = torch.load(path, map_location="cpu")["state_dict"]
+        keys = list(sd.keys())
+        for k in keys:
+            for ik in ignore_keys:
+                if k.startswith(ik):
+                    print("Deleting key {} from state_dict.".format(k))
+                    del sd[k]
+        self.load_state_dict(sd, strict=False)
+        print(f"Restored from {path}")
+
+    def encode(self, x):
+        h = self.encoder(x)
+        h = self.quant_conv(h)
+        return h
+    
+    def encode(self, x):
+        h = self.encoder(x)
+        moments = self.quant_conv(h)
+        posterior = DiagonalGaussianDistribution(moments)
+        return posterior
+
+    def decode(self, h):
+        h = self.post_quant_conv(h)
+        dec = self.decoder(h)
+        return dec
+
