@@ -1,14 +1,14 @@
 state:
   mode: train
   load: False
-  version_hparams: [dataset_type, batch_size]
+  version_hparams: [dataset_type, batch_size, lr]
   model_name: VariationalAutoEncoder
   monitor: val_rec_loss
   gpu: [0]
   precision: mixed
 
 model:
-  lr: 2e-4
+  lr: 4.5e-06
   patience: 200
   max_epochs: 500
   num_defects: None

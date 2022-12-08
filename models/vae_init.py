@@ -22,7 +22,8 @@ class VariationalAutoEncoder(LitTrainer):
         self.post_quant_conv = torch.nn.Conv2d(latent_dim, AEcfg["z_channels"], 1)
         self.embed_dim = latent_dim
 
-        self.fixed_imgs = None
+        self.fixed_train_imgs = None
+        self.fixed_val_imgs = None
 
 
     def encode(self, x):
@@ -50,19 +51,29 @@ class VariationalAutoEncoder(LitTrainer):
     @torch.no_grad()
     def log_samples(self):
 
-        if self.fixed_imgs == None:
-            self.fixed_imgs, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
-            grid = make_grid((self.fixed_imgs[:16] + 1) * 0.5, nrow=2)
-            self.logger.experiment.add_image(f'val_imgs/real', grid, 0)
+        if self.fixed_train_imgs == None:
+            self.fixed_train_imgs, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
 
-        xrec, posterior = self(self.fixed_imgs[:16].to(self.device))
+            # concatenate multiple validation images from different batches 
+            self.fixed_train_imgs = torch.cat([next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
+            self.fixed_val_imgs = torch.cat([next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
+            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
 
-        grid = make_grid((xrec + 1) * 0.5, nrow=2)
-        self.logger.experiment.add_image(f'val_imgs/reconstructred', grid, self.global_step)
+        xrec, posterior = self(self.fixed_train_imgs.to(self.device))
+        xrec_val, _ = self(self.fixed_val_imgs.to(self.device))
+
+        grid = make_grid((xrec + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/reconstructred_train', grid, self.global_step)
+
+        grid = make_grid((xrec_val + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/reconstructred_val', grid, self.global_step)
 
         rnd_samples = self.decode(torch.randn_like(posterior.sample()))
-        grid = make_grid((rnd_samples + 1) * 0.5, nrow=2)
-        self.logger.experiment.add_image(f'val_imgs/sampled', grid, self.global_step)
+        grid = make_grid((rnd_samples + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/sampled', grid, self.global_step)
 
         
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -74,8 +85,8 @@ class VariationalAutoEncoder(LitTrainer):
             # train encoder+decoder+logvar
             aeloss, log_dict_ae = self.loss(batch_imgs, recon, posterior, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train")
-            self.log("aeloss", aeloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
-            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+            self.log("aeloss", aeloss, prog_bar=True, logger=True, on_step=True, on_epoch=True, sync_dist=True)
+            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=False, sync_dist=True)
             if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
                 print(f'logging samples at step {self.global_step}')
                 self.log_samples()
@@ -86,8 +97,8 @@ class VariationalAutoEncoder(LitTrainer):
             discloss, log_dict_disc = self.loss(batch_imgs, recon, posterior, optimizer_idx, self.global_step,
                                                 last_layer=self.get_last_layer(), split="train")
 
-            self.log("discloss", discloss, prog_bar=True, logger=True, on_step=True, on_epoch=True)
-            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=False)
+            self.log("discloss", discloss, prog_bar=True, logger=True, on_step=True, on_epoch=True, sync_dist=True)
+            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=False, sync_dist=True)
             return discloss
 
 
