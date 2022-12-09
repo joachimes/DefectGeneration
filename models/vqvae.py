@@ -195,8 +195,8 @@ class VQModel(LitTrainer):
         return self.log_dict
 
     def configure_optimizers(self):
-        lr_d = self.learning_rate
-        lr_g = self.lr_g_factor*self.learning_rate
+        lr_d = self.lr
+        lr_g = self.lr_g_factor*self.lr
         print("lr_d", lr_d)
         print("lr_g", lr_g)
         opt_ae = torch.optim.Adam(list(self.encoder.parameters())+
