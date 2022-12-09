@@ -1,0 +1,424 @@
+test:
+  B:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - beak - 16c80de
+      - v0.1 - beak - fc348f8
+      n_images: 1056
+      split: synthVal
+      versions: []
+  CCD:
+    Synthetic:
+      category: A3
+      hash:
+      - CCD_go
+      - v5
+      n_images: 2178
+      split: synthVal
+      versions: []
+  CnC:
+    Synthetic:
+      category: A1
+      hash:
+      - v0.1 - HEAD - 8d9eecd
+      n_images: 238
+      split: synthVal
+      versions: []
+  DIST:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - ChipS - d10fe97
+      - v0.1 - develop - e6acb3b
+      - v0.1 - HEAD - 2e0c6f8
+      - v0.1 - StopperDefects - cba95ea
+      n_images: 1710
+      split: synthVal
+      versions: []
+  DPPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 1552
+      split: synthVal
+      versions: []
+  FCC:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - A1A2merged - 8d9eecd
+      n_images: 284
+      split: synthVal
+      versions: []
+  FOST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1-FOST-5a81437
+      - v0.1 - FOST - fc6b76c - greenCap
+      n_images: 576
+      split: synthVal
+      versions: []
+  GPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      - v0.1 - gpst - a2100ed
+      - v0.1 - gpst - 59f35e4
+      n_images: 3922
+      split: synthVal
+      versions: []
+  Good:
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      - v0.1 - StopperDefects - 6e62b4d
+      - v0.1 - StopperDefects - 14cfff0
+      n_images: 1241
+      split: synthVal
+      versions: []
+  MESM:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - MESM - 064e91a
+      n_images: 693
+      split: synthVal
+      versions: []
+  MSF:
+    Synthetic:
+      category: B1
+      hash:
+      - v0.1 - main - 8e82c19
+      n_images: 507
+      split: synthVal
+      versions: []
+  MST:
+    Synthetic:
+      category: B1
+      hash:
+      - version3
+      - version4
+      n_images: 493
+      split: synthVal
+      versions: []
+  PST:
+    Synthetic:
+      category: G1
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      n_images: 449
+      split: synthVal
+      versions: []
+  SPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 672
+      split: synthVal
+      versions: []
+  SSNPDNeck:
+    Synthetic:
+      category: C2
+      hash:
+      - v0.1 - SSNPDCake - 2b02fc5
+      - v0.1 - SSNPDCake - 700e8ce
+      n_images: 977
+      split: synthVal
+      versions: []
+train:
+  B:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - beak - 16c80de
+      - v0.1 - beak - fc348f8
+      n_images: 3962
+      split: synthTrain
+      versions: []
+  CCD:
+    Synthetic:
+      category: A3
+      hash:
+      - CCD_go
+      - v5
+      n_images: 3489
+      split: synthTrain
+      versions: []
+  CnC:
+    Synthetic:
+      category: A1
+      hash:
+      - v0.1 - HEAD - 8d9eecd
+      n_images: 999
+      split: synthTrain
+      versions: []
+  DIST:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - ChipS - d10fe97
+      - v0.1 - develop - e6acb3b
+      - v0.1 - HEAD - 2e0c6f8
+      - v0.1 - StopperDefects - cba95ea
+      n_images: 7467
+      split: synthTrain
+      versions: []
+  DPPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 4996
+      split: synthTrain
+      versions: []
+  FCC:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - A1A2merged - 8d9eecd
+      n_images: 999
+      split: synthTrain
+      versions: []
+  FOST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1-FOST-5a81437
+      - v0.1 - FOST - fc6b76c - greenCap
+      n_images: 2068
+      split: synthTrain
+      versions: []
+  GPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      - v0.1 - gpst - a2100ed
+      - v0.1 - gpst - 59f35e4
+      n_images: 13091
+      split: synthTrain
+      versions: []
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 171870
+      split: train
+      versions:
+      - A
+      - B
+      - E
+      - D
+      - C
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      - v0.1 - StopperDefects - 6e62b4d
+      - v0.1 - LightExp - 9de2a9b
+      - v0.1 - StopperDefects - 14cfff0
+      n_images: 6300
+      split: synthTrain
+      versions: []
+  MESM:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - MESM - 064e91a
+      n_images: 2284
+      split: synthTrain
+      versions: []
+  MSF:
+    Synthetic:
+      category: B1
+      hash:
+      - v0.1 - main - 8e82c19
+      n_images: 1994
+      split: synthTrain
+      versions: []
+  MST:
+    Synthetic:
+      category: B1
+      hash:
+      - version3
+      - version4
+      n_images: 2008
+      split: synthTrain
+      versions: []
+  PST:
+    Synthetic:
+      category: G1
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      n_images: 1489
+      split: synthTrain
+      versions: []
+  SPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 3075
+      split: synthTrain
+      versions: []
+  SSNPDNeck:
+    Synthetic:
+      category: C2
+      hash:
+      - v0.1 - SSNPDCake - 2b02fc5
+      - v0.1 - SSNPDCake - 700e8ce
+      n_images: 3024
+      split: synthTrain
+      versions: []
+val:
+  B:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - beak - 16c80de
+      - v0.1 - beak - fc348f8
+      n_images: 1056
+      split: synthVal
+      versions: []
+  CCD:
+    Synthetic:
+      category: A3
+      hash:
+      - CCD_go
+      - v5
+      n_images: 2178
+      split: synthVal
+      versions: []
+  CnC:
+    Synthetic:
+      category: A1
+      hash:
+      - v0.1 - HEAD - 8d9eecd
+      n_images: 238
+      split: synthVal
+      versions: []
+  DIST:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - ChipS - d10fe97
+      - v0.1 - develop - e6acb3b
+      - v0.1 - HEAD - 2e0c6f8
+      - v0.1 - StopperDefects - cba95ea
+      n_images: 1710
+      split: synthVal
+      versions: []
+  DPPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 1552
+      split: synthVal
+      versions: []
+  FCC:
+    Synthetic:
+      category: A2
+      hash:
+      - v0.1 - A1A2merged - 8d9eecd
+      n_images: 284
+      split: synthVal
+      versions: []
+  FOST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1-FOST-5a81437
+      - v0.1 - FOST - fc6b76c - greenCap
+      n_images: 576
+      split: synthVal
+      versions: []
+  GPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      - v0.1 - gpst - a2100ed
+      - v0.1 - gpst - 59f35e4
+      n_images: 3922
+      split: synthVal
+      versions: []
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 21840
+      split: val
+      versions:
+      - A
+      - B
+      - E
+      - D
+      - C
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      - v0.1 - StopperDefects - 6e62b4d
+      - v0.1 - StopperDefects - 14cfff0
+      n_images: 1241
+      split: synthVal
+      versions: []
+  MESM:
+    Synthetic:
+      category: B2
+      hash:
+      - v0.1 - MESM - 064e91a
+      n_images: 693
+      split: synthVal
+      versions: []
+  MSF:
+    Synthetic:
+      category: B1
+      hash:
+      - v0.1 - main - 8e82c19
+      n_images: 507
+      split: synthVal
+      versions: []
+  MST:
+    Synthetic:
+      category: B1
+      hash:
+      - version3
+      - version4
+      n_images: 493
+      split: synthVal
+      versions: []
+  PST:
+    Synthetic:
+      category: G1
+      hash:
+      - v0.1 - PST_JVPR - 91d8936
+      n_images: 449
+      split: synthVal
+      versions: []
+  SPST:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - NewParticleStopper - 0466cf31
+      n_images: 672
+      split: synthVal
+      versions: []
+  SSNPDNeck:
+    Synthetic:
+      category: C2
+      hash:
+      - v0.1 - SSNPDCake - 2b02fc5
+      - v0.1 - SSNPDCake - 700e8ce
+      n_images: 977
+      split: synthVal
+      versions: []

@@ -8,7 +8,7 @@ from dataset.vial_loader import VialDataModule
 import tensorboard
 import hydra 
 from omegaconf import DictConfig, OmegaConf
-from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet
+from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatch, VariationalAutoEncoder
 
 
 @hydra.main(version_base=None, config_path="config", config_name="classifier")
@@ -18,11 +18,11 @@ def main(cfg: DictConfig) -> None:
     print(cfg.dataset)
     
     dm = VialDataModule(**cfg.dataset)
-    category_num = 'num_classes' if 'num_classes' in cfg.model else 'num_defects'
-    cfg.state.version_hparams.append(category_num)
-    cfg.model[category_num] = dm.__getattribute__(category_num)
-    category_names = 'class_names' if 'class_names' in cfg.model else 'defect_names'
-    cfg.model[category_names] = dm.__getattribute__(category_names)
+    for category_attribute in ['num_classes', 'num_defects', 'class_names', 'defect_names']:
+        if category_attribute in cfg.model:
+            cfg.model[category_attribute] = dm.__getattribute__(category_attribute)
+            if 'num_' in category_attribute:
+                cfg.state.version_hparams.append(category_attribute)
     fill_none(cfg)
 
     log_folder = 'tb_logs'
@@ -38,20 +38,22 @@ def main(cfg: DictConfig) -> None:
     
     logger = TensorBoardLogger(log_folder, name=model_name, version=osp.join(version_name, version))
     callbacks = []
-    callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor='val_loss'))
+    monitor = cfg.state.monitor if cfg.state.monitor else 'val_loss'
+    callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor=monitor))
     callbacks.append(ModelCheckpoint(dirpath=model_path
-                                    , monitor='val_loss'
+                                    , monitor= monitor
                                     , filename='model_{epoch}_{val_loss:.3f}'
                                     , verbose=True
                                     , save_top_k=cfg.model.save_top_k if 'save_top_k' in cfg.model else 1
                                     , mode='min'))
     trainer = Trainer(
         accelerator="gpu",
-        devices=1 if is_available() else 0,
+        devices=cfg.state.gpu if cfg.state.gpu and is_available() else 0,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
         accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
+        precision=16 if cfg.state.precision == 'mixed' else 32,
         # profiler='simple'
     )
     weight_path = None
@@ -59,7 +61,7 @@ def main(cfg: DictConfig) -> None:
         weight_file = [f_name for f_name in model_dir if 'model_' in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      
-    accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__]
+    accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__, MixNMatch.__name__, VariationalAutoEncoder.__name__]
     assert cfg.state.model_name in accepted_models, 'Model not supported' 
     
     model = eval(cfg.state.model_name)(**cfg.model)

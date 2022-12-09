@@ -1,0 +1,37 @@
+state:
+  mode: train
+  load: False
+  version_hparams: [dataset_type, batch_size, base_size]
+  model_name: MixNMatch
+  gpu: [0]
+  precision:
+
+model:
+  lr: 2e-4
+  patience: 100
+  max_epochs: 304
+  num_defects: None
+  num_classes: None
+  defect_names: None
+  channels: 1
+  gan_cfg:
+    z_dim: 100
+    gf_dim: 64
+  bg_loss_wt: 10
+  img_size:
+  batch_size: 
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
+  weighted_sampling: 0
+  num_workers: 14
+  batch_size: 12
+  img_size: 64
+  dataset_type: Real_Synthetic
+  loader: MixNMatchLoader
+  base_size: 64
+  branch_num: 3
+  transform:
+
+      

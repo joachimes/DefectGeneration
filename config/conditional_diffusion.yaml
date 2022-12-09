@@ -3,7 +3,12 @@ state:
   load: True
   model_name: ConditionalDiffusionNet
   version_hparams: [dataset_type, batch_size, timesteps]
+<<<<<<< HEAD
   gradient_accum: 15
+=======
+  gpu: [0]
+  precision:
+>>>>>>> d07dbf32c87abebd5b873358295e633ccf31324f
 
 model:
   lr: 5e-4

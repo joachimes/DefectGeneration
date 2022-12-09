@@ -11,8 +11,8 @@ class LitTrainer(LightningModule):
     def _common_step(self, *args):
         pass
    
-    def training_step(self, *args):
-        return self._common_step(*args)
+    def training_step(self, batch, batch_idx):
+        return self._common_step(batch, batch_idx)
 
 
     def validation_step(self, *args):
