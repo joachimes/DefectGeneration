@@ -1,11 +1,12 @@
+from os import sep as os_sep
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torchvision import models
 from collections import namedtuple
 
+from models.latentDiff_utils.util import get_ckpt_path
 from models.latentDiff_utils.VAEDiscriminator import NLayerDiscriminator, weights_init
-
 
 # ------------ LPIPS loss  ------------
 
@@ -94,23 +95,23 @@ class LPIPS(nn.Module):
         self.lin2 = NetLinLayer(self.chns[2], use_dropout=use_dropout)
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
-        # self.load_from_pretrained()
+        self.load_from_pretrained()
         for param in self.parameters():
             param.requires_grad = False
 
-    # def load_from_pretrained(self, name="vgg_lpips"):
-    #     ckpt = get_ckpt_path(name, "taming/modules/autoencoder/lpips")
-    #     self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
-    #     print("loaded pretrained LPIPS loss from {}".format(ckpt))
+    def load_from_pretrained(self, name="vgg_lpips"):
+        ckpt = get_ckpt_path(name, f"models{os_sep}latentDiff_utils{os_sep}weights")
+        self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+        print("loaded pretrained LPIPS loss from {}".format(ckpt))
 
-    @classmethod
-    def from_pretrained(cls, name="vgg_lpips"):
-        if name != "vgg_lpips":
-            raise NotImplementedError
-        model = cls()
-        # ckpt = get_ckpt_path(name)
-        # model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
-        return model
+    # @classmethod
+    # def from_pretrained(cls, name="vgg_lpips"):
+    #     if name != "vgg_lpips":
+    #         raise NotImplementedError
+    #     model = cls()
+    #     ckpt = get_ckpt_path(name)
+    #     model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+    #     return model
 
     def forward(self, input, target):
         in0_input, in1_input = (self.scaling_layer(input), self.scaling_layer(target))

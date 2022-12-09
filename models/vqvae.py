@@ -2,24 +2,23 @@ import torch
 import pytorch_lightning as pl
 import torch.nn.functional as F
 from contextlib import contextmanager
+from torchvision.utils import make_grid
 
-from taming.modules.vqvae.quantize import VectorQuantizer2 as VectorQuantizer
-
-from ldm.modules.diffusionmodules.model import Encoder, Decoder
-from ldm.modules.distributions.distributions import DiagonalGaussianDistribution
-
-from ldm.util import instantiate_from_config
+from models.train import LitTrainer
+from models.latentDiff_utils.quantize import VectorQuantizer2 as VectorQuantizer
+from models.latentDiff_utils.autoencoder_utils import StableEncoder, StableDecoder
+from models.latentDiff_utils.VQVAEloss import VQLPIPSWithDiscriminator
 
 
-class VQModel(pl.LightningModule):
+
+class VQModel(LitTrainer):
     def __init__(self,
-                 ddconfig,
-                 lossconfig,
+                 AEcfg,
+                 losscfg,
                  n_embed,
-                 embed_dim,
+                 latent_dim,
                  ckpt_path=None,
                  ignore_keys=[],
-                 image_key="image",
                  colorize_nlabels=None,
                  monitor=None,
                  batch_resize_range=None,
@@ -27,20 +26,18 @@ class VQModel(pl.LightningModule):
                  lr_g_factor=1.0,
                  remap=None,
                  sane_index_shape=False, # tell vector quantizer to return indices as bhw
-                 use_ema=False
                  ):
         super().__init__()
-        self.embed_dim = embed_dim
+        self.embed_dim = latent_dim
         self.n_embed = n_embed
-        self.image_key = image_key
-        self.encoder = Encoder(**ddconfig)
-        self.decoder = Decoder(**ddconfig)
-        self.loss = instantiate_from_config(lossconfig)
-        self.quantize = VectorQuantizer(n_embed, embed_dim, beta=0.25,
+        self.encoder = StableEncoder(**AEcfg)
+        self.decoder = StableDecoder(**AEcfg)
+        self.loss = VQLPIPSWithDiscriminator(**losscfg)
+        self.quantize = VectorQuantizer(n_embed, latent_dim, beta=0.25,
                                         remap=remap,
                                         sane_index_shape=sane_index_shape)
-        self.quant_conv = torch.nn.Conv2d(ddconfig["z_channels"], embed_dim, 1)
-        self.post_quant_conv = torch.nn.Conv2d(embed_dim, ddconfig["z_channels"], 1)
+        self.quant_conv = torch.nn.Conv2d(AEcfg["z_channels"], latent_dim, 1)
+        self.post_quant_conv = torch.nn.Conv2d(latent_dim, AEcfg["z_channels"], 1)
         if colorize_nlabels is not None:
             assert type(colorize_nlabels)==int
             self.register_buffer("colorize", torch.randn(3, colorize_nlabels, 1, 1))
@@ -50,30 +47,12 @@ class VQModel(pl.LightningModule):
         if self.batch_resize_range is not None:
             print(f"{self.__class__.__name__}: Using per-batch resizing in range {batch_resize_range}.")
 
-        self.use_ema = use_ema
-        if self.use_ema:
-            self.model_ema = LitEma(self)
-            print(f"Keeping EMAs of {len(list(self.model_ema.buffers()))}.")
 
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
         self.scheduler_config = scheduler_config
         self.lr_g_factor = lr_g_factor
 
-    @contextmanager
-    def ema_scope(self, context=None):
-        if self.use_ema:
-            self.model_ema.store(self.parameters())
-            self.model_ema.copy_to(self)
-            if context is not None:
-                print(f"{context}: Switched to EMA weights")
-        try:
-            yield None
-        finally:
-            if self.use_ema:
-                self.model_ema.restore(self.parameters())
-                if context is not None:
-                    print(f"{context}: Restored training weights")
 
     def init_from_ckpt(self, path, ignore_keys=list()):
         sd = torch.load(path, map_location="cpu")["state_dict"]
@@ -88,10 +67,6 @@ class VQModel(pl.LightningModule):
         if len(missing) > 0:
             print(f"Missing Keys: {missing}")
             print(f"Unexpected Keys: {unexpected}")
-
-    def on_train_batch_end(self, *args, **kwargs):
-        if self.use_ema:
-            self.model_ema(self)
 
     def encode(self, x):
         h = self.encoder(x)
@@ -121,33 +96,62 @@ class VQModel(pl.LightningModule):
             return dec, diff, ind
         return dec, diff
 
-    def get_input(self, batch, k):
-        x = batch[k]
-        if len(x.shape) == 3:
-            x = x[..., None]
-        x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
-        if self.batch_resize_range is not None:
-            lower_size = self.batch_resize_range[0]
-            upper_size = self.batch_resize_range[1]
-            if self.global_step <= 4:
-                # do the first few batches with max size to avoid later oom
-                new_resize = upper_size
-            else:
-                new_resize = np.random.choice(np.arange(lower_size, upper_size+16, 16))
-            if new_resize != x.shape[2]:
-                x = F.interpolate(x, size=new_resize, mode="bicubic")
-            x = x.detach()
-        return x
+    # def get_input(self, batch, k):
+    #     x = batch[k]
+    #     if len(x.shape) == 3:
+    #         x = x[..., None]
+    #     x = x.permute(0, 3, 1, 2).to(memory_format=torch.contiguous_format).float()
+    #     if self.batch_resize_range is not None:
+    #         lower_size = self.batch_resize_range[0]
+    #         upper_size = self.batch_resize_range[1]
+    #         if self.global_step <= 4:
+    #             # do the first few batches with max size to avoid later oom
+    #             new_resize = upper_size
+    #         else:
+    #             new_resize = np.random.choice(np.arange(lower_size, upper_size+16, 16))
+    #         if new_resize != x.shape[2]:
+    #             x = F.interpolate(x, size=new_resize, mode="bicubic")
+    #         x = x.detach()
+    #     return x
+
+    @torch.no_grad()
+    def log_samples(self):
+
+        if self.fixed_train_imgs == None:
+            self.fixed_train_imgs, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+
+            # concatenate multiple validation images from different batches 
+            self.fixed_train_imgs = torch.cat([next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
+            self.fixed_val_imgs = torch.cat([next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
+            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
+
+        xrec, posterior = self(self.fixed_train_imgs.to(self.device))
+        xrec_val, _ = self(self.fixed_val_imgs.to(self.device))
+
+        grid = make_grid((xrec + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/reconstructred_train', grid, self.global_step)
+
+        grid = make_grid((xrec_val + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/reconstructred_val', grid, self.global_step)
+
+        rnd_samples = self.decode(torch.randn_like(posterior.sample()))
+        grid = make_grid((rnd_samples + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'imgs/sampled', grid, self.global_step)
+
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         # https://github.com/pytorch/pytorch/issues/37142
         # try not to fool the heuristics
-        x = self.get_input(batch, self.image_key)
-        xrec, qloss, ind = self(x, return_pred_indices=True)
+        batch_imgs, *_ = batch
+
+        xrec, qloss, ind = self(batch_imgs, return_pred_indices=True)
 
         if optimizer_idx == 0:
             # autoencode
-            aeloss, log_dict_ae = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+            aeloss, log_dict_ae = self.loss(qloss, batch_imgs, xrec, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train",
                                             predicted_indices=ind)
 
@@ -156,40 +160,36 @@ class VQModel(pl.LightningModule):
 
         if optimizer_idx == 1:
             # discriminator
-            discloss, log_dict_disc = self.loss(qloss, x, xrec, optimizer_idx, self.global_step,
+            discloss, log_dict_disc = self.loss(qloss, batch_imgs, xrec, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train")
             self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True)
             return discloss
 
-    def validation_step(self, batch, batch_idx):
-        log_dict = self._validation_step(batch, batch_idx)
-        with self.ema_scope():
-            log_dict_ema = self._validation_step(batch, batch_idx, suffix="_ema")
-        return log_dict
 
-    def _validation_step(self, batch, batch_idx, suffix=""):
-        x = self.get_input(batch, self.image_key)
-        xrec, qloss, ind = self(x, return_pred_indices=True)
-        aeloss, log_dict_ae = self.loss(qloss, x, xrec, 0,
+    def validation_step(self, batch, batch_idx):
+        batch_imgs, *_ = batch
+
+        xrec, qloss, ind = self(batch_imgs, return_pred_indices=True)
+        aeloss, log_dict_ae = self.loss(qloss, batch_imgs, xrec, 0,
                                         self.global_step,
                                         last_layer=self.get_last_layer(),
-                                        split="val"+suffix,
+                                        split="val",
                                         predicted_indices=ind
                                         )
 
-        discloss, log_dict_disc = self.loss(qloss, x, xrec, 1,
+        discloss, log_dict_disc = self.loss(qloss, batch_imgs, xrec, 1,
                                             self.global_step,
                                             last_layer=self.get_last_layer(),
-                                            split="val"+suffix,
+                                            split="val",
                                             predicted_indices=ind
                                             )
-        rec_loss = log_dict_ae[f"val{suffix}/rec_loss"]
-        self.log(f"val{suffix}/rec_loss", rec_loss,
+        rec_loss = log_dict_ae[f"val/rec_loss"]
+        self.log(f"val/rec_loss", rec_loss,
                    prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
-        self.log(f"val{suffix}/aeloss", aeloss,
+        self.log(f"val/aeloss", aeloss,
                    prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         if version.parse(pl.__version__) >= version.parse('1.4.0'):
-            del log_dict_ae[f"val{suffix}/rec_loss"]
+            del log_dict_ae[f"val/rec_loss"]
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         return self.log_dict
@@ -232,38 +232,35 @@ class VQModel(pl.LightningModule):
 
     def log_images(self, batch, only_inputs=False, plot_ema=False, **kwargs):
         log = dict()
-        x = self.get_input(batch, self.image_key)
-        x = x.to(self.device)
+        batch_imgs, *_ = batch
+
+        batch_imgs = batch_imgs.to(self.device)
         if only_inputs:
-            log["inputs"] = x
+            log["inputs"] = batch_imgs
             return log
-        xrec, _ = self(x)
-        if x.shape[1] > 3:
-            # colorize with random projection
-            assert xrec.shape[1] > 3
-            x = self.to_rgb(x)
-            xrec = self.to_rgb(xrec)
-        log["inputs"] = x
+        xrec, _ = self(batch_imgs)
+        # if batch_imgs.shape[1] > 3:
+        #     # colorize with random projection
+        #     assert xrec.shape[1] > 3
+        #     batch_imgs = self.to_rgb(batch_imgs)
+        #     xrec = self.to_rgb(xrec)
+        log["inputs"] = batch_imgs
         log["reconstructions"] = xrec
-        if plot_ema:
-            with self.ema_scope():
-                xrec_ema, _ = self(x)
-                if x.shape[1] > 3: xrec_ema = self.to_rgb(xrec_ema)
-                log["reconstructions_ema"] = xrec_ema
+
         return log
 
-    def to_rgb(self, x):
-        assert self.image_key == "segmentation"
-        if not hasattr(self, "colorize"):
-            self.register_buffer("colorize", torch.randn(3, x.shape[1], 1, 1).to(x))
-        x = F.conv2d(x, weight=self.colorize)
-        x = 2.*(x-x.min())/(x.max()-x.min()) - 1.
-        return x
+    # def to_rgb(self, x):
+    #     assert self.image_key == "segmentation"
+    #     if not hasattr(self, "colorize"):
+    #         self.register_buffer("colorize", torch.randn(3, x.shape[1], 1, 1).to(x))
+    #     x = F.conv2d(x, weight=self.colorize)
+    #     x = 2.*(x-x.min())/(x.max()-x.min()) - 1.
+    #     return x
 
 
 class VQModelInterface(VQModel):
     def __init__(self, embed_dim, *args, **kwargs):
-        super().__init__(embed_dim=embed_dim, *args, **kwargs)
+        super().__init__(latent_dim=embed_dim, *args, **kwargs)
         self.embed_dim = embed_dim
 
     def encode(self, x):
