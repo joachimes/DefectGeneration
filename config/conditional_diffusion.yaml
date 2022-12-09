@@ -1,8 +1,9 @@
 state:
   mode: train
-  load: False
+  load: True
   model_name: ConditionalDiffusionNet
   version_hparams: [dataset_type, batch_size, timesteps]
+  gradient_accum: 15
 
 model:
   lr: 5e-4
@@ -22,8 +23,8 @@ dataset:
   camera: 2
   weighted_sampling: 1
   num_workers: 8
-  batch_size: 1536
-  img_size: 32
+  batch_size: 250
+  img_size: 64
   mean: [0.5, 0.5, 0.5]
   std: [0.5, 0.5, 0.5]
   dataset_type: Synthetic

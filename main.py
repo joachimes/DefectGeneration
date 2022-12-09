@@ -50,6 +50,7 @@ def main(cfg: DictConfig) -> None:
         devices=1 if is_available() else 0,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
+        accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
         # profiler='simple'
     )
