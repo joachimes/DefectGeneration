@@ -4,6 +4,8 @@ import torch.nn.functional as F
 
 from models.latentDiff_utils.VAEloss import  NLayerDiscriminator, weights_init, LPIPS, hinge_d_loss, vanilla_d_loss
 
+def exists(x):
+    return x is not None
 
 def hinge_d_loss_with_exemplar_weights(logits_real, logits_fake, weights):
     assert weights.shape[0] == logits_real.shape[0] == logits_fake.shape[0]

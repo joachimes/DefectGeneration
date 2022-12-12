@@ -3,6 +3,7 @@ import pytorch_lightning as pl
 import torch.nn.functional as F
 from contextlib import contextmanager
 from torchvision.utils import make_grid
+from packaging import version
 
 from models.train import LitTrainer
 from models.latentDiff_utils.quantize import VectorQuantizer2 as VectorQuantizer
@@ -26,13 +27,14 @@ class VQModel(LitTrainer):
                  lr_g_factor=1.0,
                  remap=None,
                  sane_index_shape=False, # tell vector quantizer to return indices as bhw
+                 **kwargs
                  ):
-        super().__init__()
+        super().__init__(**kwargs)
         self.embed_dim = latent_dim
         self.n_embed = n_embed
         self.encoder = StableEncoder(**AEcfg)
         self.decoder = StableDecoder(**AEcfg)
-        self.loss = VQLPIPSWithDiscriminator(**losscfg)
+        self.loss = VQLPIPSWithDiscriminator(n_classes=n_embed, **losscfg)
         self.quantize = VectorQuantizer(n_embed, latent_dim, beta=0.25,
                                         remap=remap,
                                         sane_index_shape=sane_index_shape)
@@ -47,6 +49,8 @@ class VQModel(LitTrainer):
         if self.batch_resize_range is not None:
             print(f"{self.__class__.__name__}: Using per-batch resizing in range {batch_resize_range}.")
 
+        self.fixed_train_imgs = None
+        self.fixed_val_imgs = None
 
         if ckpt_path is not None:
             self.init_from_ckpt(ckpt_path, ignore_keys=ignore_keys)
@@ -128,7 +132,7 @@ class VQModel(LitTrainer):
             grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
             self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
 
-        xrec, posterior = self(self.fixed_train_imgs.to(self.device))
+        xrec, _ = self(self.fixed_train_imgs.to(self.device))
         xrec_val, _ = self(self.fixed_val_imgs.to(self.device))
 
         grid = make_grid((xrec + 1) * 0.5, nrow=4)
@@ -137,9 +141,6 @@ class VQModel(LitTrainer):
         grid = make_grid((xrec_val + 1) * 0.5, nrow=4)
         self.logger.experiment.add_image(f'imgs/reconstructred_val', grid, self.global_step)
 
-        rnd_samples = self.decode(torch.randn_like(posterior.sample()))
-        grid = make_grid((rnd_samples + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'imgs/sampled', grid, self.global_step)
 
 
     def training_step(self, batch, batch_idx, optimizer_idx):
@@ -156,6 +157,9 @@ class VQModel(LitTrainer):
                                             predicted_indices=ind)
 
             self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
+                print(f'logging samples at step {self.global_step}')
+                self.log_samples()
             return aeloss
 
         if optimizer_idx == 1:
@@ -167,7 +171,7 @@ class VQModel(LitTrainer):
 
 
     def validation_step(self, batch, batch_idx):
-        batch_imgs, *_ = batch
+        batch_imgs, _, classes  = batch
 
         xrec, qloss, ind = self(batch_imgs, return_pred_indices=True)
         aeloss, log_dict_ae = self.loss(qloss, batch_imgs, xrec, 0,
@@ -184,7 +188,7 @@ class VQModel(LitTrainer):
                                             predicted_indices=ind
                                             )
         rec_loss = log_dict_ae[f"val/rec_loss"]
-        self.log(f"val/rec_loss", rec_loss,
+        self.log(f"val_rec_loss", rec_loss,
                    prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         self.log(f"val/aeloss", aeloss,
                    prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
@@ -193,6 +197,9 @@ class VQModel(LitTrainer):
         self.log_dict(log_dict_ae)
         self.log_dict(log_dict_disc)
         return self.log_dict
+    
+    def validation_epoch_end(self, outputs):
+        self.log_samples()
 
     def configure_optimizers(self):
         lr_d = self.lr
