@@ -6,9 +6,9 @@ import torch.nn.functional as F
 from models.latentDiff_utils.autoencoder_utils import StableEncoder, StableDecoder, DiagonalGaussianDistribution
 from models.latentDiff_utils.VAEloss import LPIPSWithDiscriminator
 
-class VariationalAutoEncoder(LitTrainer):
+class VAEModel(LitTrainer):
     def __init__(self, latent_dim, AEcfg, losscfg, batch_size=8, **kwargs) -> None:
-        super(VariationalAutoEncoder, self).__init__(**kwargs)
+        super(VAEModel, self).__init__(**kwargs)
         self.batch_size = batch_size
         
         self.latent_dim = latent_dim
@@ -143,7 +143,7 @@ class VariationalAutoEncoder(LitTrainer):
         return self.decoder.conv_out.weight
 
 
-class VAEInterface(VariationalAutoEncoder):
+class VAEInterface(VAEModel):
     def __init__(self, embed_dim, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.embed_dim = embed_dim
@@ -158,11 +158,6 @@ class VAEInterface(VariationalAutoEncoder):
                     del sd[k]
         self.load_state_dict(sd, strict=False)
         print(f"Restored from {path}")
-
-    def encode(self, x):
-        h = self.encoder(x)
-        h = self.quant_conv(h)
-        return h
     
     def encode(self, x):
         h = self.encoder(x)

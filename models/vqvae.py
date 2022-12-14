@@ -269,6 +269,7 @@ class VQModelInterface(VQModel):
     def __init__(self, embed_dim, *args, **kwargs):
         super().__init__(latent_dim=embed_dim, *args, **kwargs)
         self.embed_dim = embed_dim
+        self.loss = torch.nn.Identity() # dummy loss
 
     def encode(self, x):
         h = self.encoder(x)

@@ -1,0 +1,69 @@
+state:
+  mode: train
+  load: False
+  version_hparams: [dataset_type, batch_size, latent_dim, n_embed]
+  model_name: LatentDiffusion
+  monitor: val_rec_loss
+  gpu: [0]
+  precision: mixed
+
+model:
+  lr: 1.0e-06
+  patience: 200
+  max_epochs: 500
+  num_defects: None
+  defect_names: None
+
+  linear_start: 0.0015
+  linear_end: 0.0195
+  num_timesteps_cond: 1
+  log_every_t: 200
+  timesteps: 1000
+  first_stage_key: image
+  cond_stage_key: class_label
+  image_size: 32
+  channels: 4
+  cond_stage_trainable: true
+  conditioning_key: crossattn
+  monitor: val/loss_simple_ema
+
+  AEcfg:
+    first_stage_model: VQModelInterface
+    ckpt_path:
+    double_z: False
+    z_channels: 8
+    img_size: 256
+    channels: 3
+    out_ch: 3
+    init_dim: 128
+    dim_mult: [1, 1, 2, 2, 4]
+    num_res_blocks: 2
+    attn_resolutions: [16]
+    resnet_block_groups: 8
+  unet_config:
+    image_size: 16
+    in_channels: 8
+    out_channels: 8
+    model_channels: 256
+    attention_resolutions: [4, 2, 1]
+    num_res_blocks: 2
+    channel_mult: [1, 2, 4]
+    num_head_channels: 32
+    use_spatial_transformer: true
+    transformer_depth: 1
+    context_dim: 512
+  cond_stage_config:
+    embed_dim: 10
+    key: class_label
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
+  weighted_sampling: 1
+  num_workers: 8
+  batch_size: 10
+  img_size: 256
+  dataset_type: Synthetic_generative
+  transform:
+
+      
