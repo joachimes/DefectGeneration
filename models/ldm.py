@@ -120,6 +120,8 @@ class DDPM(LitTrainer):
         self.logvar = torch.full(fill_value=logvar_init, size=(self.num_timesteps,))
         if self.learn_logvar:
             self.logvar = nn.Parameter(self.logvar, requires_grad=True)
+        self.fixed_train_imgs = None
+        self.fixed_val_imgs = None
 
 
     def register_schedule(self, given_betas=None, beta_schedule="linear", timesteps=1000,
@@ -361,6 +363,10 @@ class DDPM(LitTrainer):
         if self.use_scheduler:
             lr = self.optimizers().param_groups[0]['lr']
             self.log('lr_abs', lr, prog_bar=True, logger=True, on_step=True, on_epoch=False)
+        
+        if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
+            print(f'logging samples at step {self.global_step}')
+            self.log_samples()
 
         return loss
 
@@ -453,6 +459,8 @@ class LatentDiffusion(DDPM):
             conditioning_key = 'concat' if concat_mode else 'crossattn'
         if cond_stage_config == '__is_unconditional__':
             conditioning_key = None
+        if 'n_classes' in cond_stage_config:
+            cond_stage_config.n_classes = kwargs['num_defects']
         ckpt_path = kwargs.pop("ckpt_path", None)
         ignore_keys = kwargs.pop("ignore_keys", [])
         super().__init__(conditioning_key=conditioning_key, *args, **kwargs)
@@ -460,7 +468,7 @@ class LatentDiffusion(DDPM):
         self.cond_stage_trainable = cond_stage_trainable
         self.cond_stage_key = cond_stage_key
         try:
-            self.num_downs = len(first_stage_config.params.ddconfig.ch_mult) - 1
+            self.num_downs = len(first_stage_config.AEcfg.dim_mult) - 1
         except:
             self.num_downs = 0
         if not scale_by_std:
@@ -485,7 +493,7 @@ class LatentDiffusion(DDPM):
 
     @rank_zero_only
     @torch.no_grad()
-    def on_train_batch_start(self, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, batch, batch_idx, dataloader_idx=None):
         # only for very first batch
         if self.scale_by_std and self.current_epoch == 0 and self.global_step == 0 and batch_idx == 0 and not self.restarted_from_ckpt:
             assert self.scale_factor == 1., 'rather not use custom rescaling and std-rescaling simultaneously'
@@ -510,8 +518,8 @@ class LatentDiffusion(DDPM):
             self.make_cond_schedule()
 
     def instantiate_first_stage(self, config):
-        assert config['first_stage_model'] in [VQModelInterface.__name__, VAEInterface.__name__]
-        model = eval(config['first_stage_model'])(config) #instantiate_from_config(config)
+        assert config.first_stage_model in [VQModelInterface.__name__, VAEInterface.__name__]
+        model = eval(config.first_stage_model)(**config) #instantiate_from_config(config)
         self.first_stage_model = model.eval()
         self.first_stage_model.train = disabled_train
         for param in self.first_stage_model.parameters():
@@ -527,7 +535,7 @@ class LatentDiffusion(DDPM):
                 self.cond_stage_model = None
                 # self.be_unconditional = True
             else:
-                model = ClassEmbedder(config) #instantiate_from_config(config)
+                model = ClassEmbedder(**config) #instantiate_from_config(config)
                 self.cond_stage_model = model.eval()
                 self.cond_stage_model.train = disabled_train
                 for param in self.cond_stage_model.parameters():
@@ -535,7 +543,7 @@ class LatentDiffusion(DDPM):
         else:
             assert config != '__is_first_stage__'
             assert config != '__is_unconditional__'
-            model = ClassEmbedder(config) #instantiate_from_config(config)
+            model = ClassEmbedder(**config) #instantiate_from_config(config)
             self.cond_stage_model = model
 
     def _get_denoise_row_from_list(self, samples, desc='', force_no_decoder_quantization=False):
@@ -681,12 +689,8 @@ class LatentDiffusion(DDPM):
                 #     xc = batch
                 # else:
                 #     xc = super().get_input(batch, cond_key).to(self.device)
-                if cond_key == "defect_label":
-                    _, _, xc, *_ = batch
-                elif cond_key == 'class_label':
-                    _, xc, *_ = batch
-                else:
-                    _, _, xc, *_ = batch
+                
+                xc = batch[cond_key]
 
             else:
                 xc = x
@@ -884,6 +888,9 @@ class LatentDiffusion(DDPM):
         x, c = self.get_input(batch, self.first_stage_key)
         loss = self(x, c)
         return loss
+
+    def validation_epoch_end(self, outputs):
+        self.log_samples()
 
     def forward(self, x, c, *args, **kwargs):
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
@@ -1264,6 +1271,36 @@ class LatentDiffusion(DDPM):
 
         return samples, intermediates
 
+    @torch.no_grad()
+    def log_samples(self):
+
+        if self.fixed_train_imgs == None:
+            # concatenate multiple validation images from different batches 
+
+            self.fixed_train_imgs, _, self.t_xc, *_ = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
+            self.fixed_val_imgs, _, self.v_xc, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+            self.fixed_train_imgs = self.fixed_train_imgs[:16]
+            self.fixed_val_imgs = self.fixed_val_imgs[:16]
+            self.logger.experiment.log_hyperparams({'fixed_train_labels': self.t_xc[:16], 'fixed_val_labels': self.v_xc[:16]})
+            self.xc_combined = torch.cat([self.t_xc[:16], self.v_xc[:16]], dim=0) # Combine to make single diffusion pass
+            self.xc_combined = self.get_learned_conditioning(self.xc_combined.to(self.device))
+
+            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
+
+        with self.ema_scope("Plotting"):
+            samples, _ = self.sample_log(cond=self.xc_combined,batch_size=16*2,ddim=True,
+                                                        ddim_steps=200,eta=1)
+        x_samples = self.decode_first_stage(samples)
+        grid = make_grid((x_samples[:16] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'sd_imgs/reconstructred_train', grid, self.global_step)
+
+        grid = make_grid((x_samples[16:] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'sd_imgs/reconstructred_val', grid, self.global_step)
+
+
 
     @torch.no_grad()
     def log_images(self, batch, N=8, n_row=4, sample=True, ddim_steps=200, ddim_eta=1., return_keys=None,
@@ -1378,7 +1415,7 @@ class LatentDiffusion(DDPM):
         return log
 
     def configure_optimizers(self):
-        lr = self.learning_rate
+        lr = self.lr
         params = list(self.model.parameters())
         if self.cond_stage_trainable:
             print(f"{self.__class__.__name__}: Also optimizing conditioner params!")
@@ -1414,7 +1451,7 @@ class LatentDiffusion(DDPM):
 class DiffusionWrapper(pl.LightningModule):
     def __init__(self, diff_model_config, conditioning_key, num_defects):
         super().__init__()
-        self.diffusion_model = UNetModel(num_defects=num_defects, **diff_model_config) # instantiate_from_config(diff_model_config)
+        self.diffusion_model = UNetModel( **diff_model_config) # instantiate_from_config(diff_model_config)
         self.conditioning_key = conditioning_key
         assert self.conditioning_key in [None, 'concat', 'crossattn', 'hybrid', 'adm']
 

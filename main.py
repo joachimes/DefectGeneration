@@ -8,7 +8,7 @@ from dataset.vial_loader import VialDataModule
 import tensorboard
 import hydra 
 from omegaconf import DictConfig, OmegaConf
-from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatch, VAEModel, VQModel
+from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatch, VAEModel, VQModel, LatentDiffusion
 
 
 @hydra.main(version_base=None, config_path="config", config_name="classifier")
@@ -61,7 +61,7 @@ def main(cfg: DictConfig) -> None:
         weight_path = osp.join(model_path, weight_file) 
      
     accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__, MixNMatch.__name__, VAEModel.__name__
-                        , VQModel.__name__]
+                        , VQModel.__name__, LatentDiffusion.__name__]
     assert cfg.state.model_name in accepted_models, 'Model not supported' 
     
     model = eval(cfg.state.model_name)(**cfg.model)

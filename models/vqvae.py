@@ -15,8 +15,8 @@ from models.latentDiff_utils.VQVAEloss import VQLPIPSWithDiscriminator
 class VQModel(LitTrainer):
     def __init__(self,
                  AEcfg,
-                 losscfg,
                  n_embed,
+                 losscfg,
                  latent_dim,
                  ckpt_path=None,
                  ignore_keys=[],
@@ -34,7 +34,8 @@ class VQModel(LitTrainer):
         self.n_embed = n_embed
         self.encoder = StableEncoder(**AEcfg)
         self.decoder = StableDecoder(**AEcfg)
-        self.loss = VQLPIPSWithDiscriminator(n_classes=n_embed, **losscfg)
+        if losscfg != 'identity':
+            self.loss = VQLPIPSWithDiscriminator(n_classes=n_embed, **losscfg)
         self.quantize = VectorQuantizer(n_embed, latent_dim, beta=0.25,
                                         remap=remap,
                                         sane_index_shape=sane_index_shape)
@@ -122,8 +123,6 @@ class VQModel(LitTrainer):
     def log_samples(self):
 
         if self.fixed_train_imgs == None:
-            self.fixed_train_imgs, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
-
             # concatenate multiple validation images from different batches 
             self.fixed_train_imgs = torch.cat([next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
             self.fixed_val_imgs = torch.cat([next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
@@ -266,9 +265,8 @@ class VQModel(LitTrainer):
 
 
 class VQModelInterface(VQModel):
-    def __init__(self, embed_dim, *args, **kwargs):
-        super().__init__(latent_dim=embed_dim, *args, **kwargs)
-        self.embed_dim = embed_dim
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.loss = torch.nn.Identity() # dummy loss
 
     def encode(self, x):

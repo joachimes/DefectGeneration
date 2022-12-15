@@ -1,11 +1,11 @@
 state:
   mode: train
   load: False
-  version_hparams: [dataset_type, batch_size, img_size, channels]
+  version_hparams: [dataset_type, batch_size, latent_dim]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
   gpu: [0]
-  precision: 
+  precision: mixed
 
 model:
   lr: 1.0e-06
@@ -21,11 +21,11 @@ model:
   timesteps: 1000
   first_stage_key: image
   cond_stage_key: 2
-  image_size: 16
-  channels: 8
+  image_size: 32
+  channels: 4
   cond_stage_trainable: true
   conditioning_key: crossattn
-  monitor: val/loss_epoch
+  monitor: val/loss_simple_ema
 
   first_stage_config:
     first_stage_model: VQModelInterface
@@ -55,18 +55,18 @@ model:
     num_head_channels: 32
     use_spatial_transformer: true
     transformer_depth: 1
-    context_dim: 9
+    context_dim: 512
   cond_stage_config:
-    embed_dim: 9
+    embed_dim: 8
     key: 2
-    n_classes:
+    n_classes: 
 
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 8
-  batch_size: 32
+  num_workers: 1
+  batch_size: 10
   img_size: 256
   dataset_type: Synthetic_generative
   transform:
