@@ -51,6 +51,7 @@ def main(cfg: DictConfig) -> None:
         devices=cfg.state.gpu if cfg.state.gpu and is_available() else None,
         max_epochs=cfg.model.max_epochs,
         logger=logger,
+        accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
         precision=16 if cfg.state.precision == 'mixed' else 32,
         # profiler='simple'
