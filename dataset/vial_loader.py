@@ -7,6 +7,7 @@ from pytorch_lightning import LightningDataModule
 
 from dataset.baseDataloader import BaseVialLoader
 from dataset.mixNMatchDataloader import MixNMatchLoader
+from dataset.baseNLabelDataloader import VialNLabelLoader
 from dataset.transforms import GenerativeTransform, ImageTransform
 
 
@@ -24,7 +25,7 @@ class VialDataModule(LightningDataModule):
         self.vial_loader = {}
         self.num_classes = 0
         self.num_defects = 0
-        valid_loaders = [MixNMatchLoader.__name__]
+        valid_loaders = [MixNMatchLoader.__name__, VialNLabelLoader.__name__]
         self.loader_type = eval(loader) if loader in valid_loaders else BaseVialLoader
         for split in self.data_splits:
             self.vial_loader[split] = self.loader_type(data_path=self.data_path, defects=self.data_splits[split], camera=camera, transform=self.transform, setting=split, **kwargs)
