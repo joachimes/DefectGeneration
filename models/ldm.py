@@ -1285,19 +1285,24 @@ class LatentDiffusion(DDPM):
             self.xc_combined = torch.cat([self.t_xc[:16], self.v_xc[:16]], dim=0) # Combine to make single diffusion pass
             self.xc_combined = self.get_learned_conditioning(self.xc_combined.to(self.device))
 
-            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
-            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
+            grid = make_grid((self.fixed_train_imgs[:, :3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs[:, :3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'sd_imgs/real_val', grid, 0)
+            if self.fixed_train_imgs.shape[1] == 4:
+                grid = make_grid((self.fixed_train_imgs[:, 3] + 1) * 0.5, nrow=4)
+                self.logger.experiment.add_image(f'sd_imgs/real_label_train', grid, 0)
+                grid = make_grid((self.fixed_val_imgs[:, 3] + 1) * 0.5, nrow=4)
+                self.logger.experiment.add_image(f'sd_imgs/real_label_val', grid, 0)
 
         with self.ema_scope("Plotting"):
             samples, _ = self.sample_log(cond=self.xc_combined,batch_size=16*2,ddim=True,
                                                         ddim_steps=200,eta=1)
         x_samples = self.decode_first_stage(samples)
-        grid = make_grid((x_samples[:16] + 1) * 0.5, nrow=4)
+        grid = make_grid((x_samples[:16, :3] + 1) * 0.5, nrow=4)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_train', grid, self.global_step)
 
-        grid = make_grid((x_samples[16:] + 1) * 0.5, nrow=4)
+        grid = make_grid((x_samples[16:, :3] + 1) * 0.5, nrow=4)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_val', grid, self.global_step)
 
 

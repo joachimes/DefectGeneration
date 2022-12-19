@@ -124,22 +124,20 @@ class DiffusionNet(LitTrainer):
     
     def training_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        res = {'train_avg_loss': avg_loss}
-        return res
+        self.log(f'train_loss', avg_loss, on_epoch=True, logger=True)
+
         
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        res = {'val_avg_loss': avg_loss}
         self.log_samples()
-        return res
+        self.log(f'val_loss', avg_loss, on_epoch=True, logger=True)
 
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        res = {'test_avg_loss': avg_loss}
         self.log_samples()
-        return res
+        self.log(f'test_loss', avg_loss, on_epoch=True, logger=True)
 
 
     def num_to_groups(self, num, divisor):
