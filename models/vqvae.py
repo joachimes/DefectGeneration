@@ -126,19 +126,33 @@ class VQModel(LitTrainer):
             # concatenate multiple validation images from different batches 
             self.fixed_train_imgs = torch.cat([next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
             self.fixed_val_imgs = torch.cat([next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))[0] for i in range(3)], dim=0)[:16]
-            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
-            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
+            grid = make_grid((self.fixed_train_imgs[:,:3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'vq_imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs[:,:3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'vq_imgs/real_val', grid, 0)
+            if self.fixed_train_imgs.shape[1] == 4:
+                grid = make_grid((self.fixed_train_imgs[:, 3] + 1) * 0.5, nrow=4)
+                self.logger.experiment.add_image(f'vq_imgs/real_label_train', grid, 0)
+                grid = make_grid((self.fixed_val_imgs[:, 3] + 1) * 0.5, nrow=4)
+                self.logger.experiment.add_image(f'vq_imgs/real_label_val', grid, 0)
+                
 
         xrec, _ = self(self.fixed_train_imgs.to(self.device))
         xrec_val, _ = self(self.fixed_val_imgs.to(self.device))
 
-        grid = make_grid((xrec + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'imgs/reconstructred_train', grid, self.global_step)
+        grid = make_grid((xrec[:, :3] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'vq_imgs/reconstructred_train', grid, self.global_step)
 
-        grid = make_grid((xrec_val + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'imgs/reconstructred_val', grid, self.global_step)
+        grid = make_grid((xrec_val[:, :3] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'vq_imgs/reconstructred_val', grid, self.global_step)
+
+        if self.fixed_train_imgs.shape[1] == 4:
+            
+            grid = make_grid((xrec[:, 3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'vq_imgs/reconstructred_label_train', grid, self.global_step)
+
+            grid = make_grid((xrec_val[:, 3] + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'vq_imgs/reconstructred_label_val', grid, self.global_step)
 
 
 
