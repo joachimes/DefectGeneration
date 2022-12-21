@@ -131,9 +131,9 @@ class VQModel(LitTrainer):
             grid = make_grid((self.fixed_val_imgs[:,:3] + 1) * 0.5, nrow=4)
             self.logger.experiment.add_image(f'vq_imgs/real_val', grid, 0)
             if self.fixed_train_imgs.shape[1] == 4:
-                grid = make_grid((self.fixed_train_imgs[:, 3] + 1) * 0.5, nrow=4)
+                grid = make_grid((torch.cat([self.fixed_train_imgs[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
                 self.logger.experiment.add_image(f'vq_imgs/real_label_train', grid, 0)
-                grid = make_grid((self.fixed_val_imgs[:, 3] + 1) * 0.5, nrow=4)
+                grid = make_grid((torch.cat([self.fixed_val_imgs[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
                 self.logger.experiment.add_image(f'vq_imgs/real_label_val', grid, 0)
                 
 
@@ -147,11 +147,11 @@ class VQModel(LitTrainer):
         self.logger.experiment.add_image(f'vq_imgs/reconstructred_val', grid, self.global_step)
 
         if self.fixed_train_imgs.shape[1] == 4:
-            
-            grid = make_grid((xrec[:, 3] + 1) * 0.5, nrow=4)
+            torch.cat([xrec[:, 3] for _ in range(3)])
+            grid = make_grid((torch.cat([xrec[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
             self.logger.experiment.add_image(f'vq_imgs/reconstructred_label_train', grid, self.global_step)
 
-            grid = make_grid((xrec_val[:, 3] + 1) * 0.5, nrow=4)
+            grid = make_grid((torch.cat([xrec_val[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
             self.logger.experiment.add_image(f'vq_imgs/reconstructred_label_val', grid, self.global_step)
 
 
@@ -169,7 +169,7 @@ class VQModel(LitTrainer):
                                             last_layer=self.get_last_layer(), split="train",
                                             predicted_indices=ind)
 
-            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            self.log_dict(log_dict_ae, prog_bar=False, logger=True, on_step=True, on_epoch=True, sync_dist=True)
             if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
                 print(f'logging samples at step {self.global_step}')
                 self.log_samples()
@@ -179,7 +179,7 @@ class VQModel(LitTrainer):
             # discriminator
             discloss, log_dict_disc = self.loss(qloss, batch_imgs, xrec, optimizer_idx, self.global_step,
                                             last_layer=self.get_last_layer(), split="train")
-            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True)
+            self.log_dict(log_dict_disc, prog_bar=False, logger=True, on_step=True, on_epoch=True, sync_dist=True)
             return discloss
 
 
@@ -207,8 +207,8 @@ class VQModel(LitTrainer):
                    prog_bar=True, logger=True, on_step=False, on_epoch=True, sync_dist=True)
         if version.parse(pl.__version__) >= version.parse('1.4.0'):
             del log_dict_ae[f"val/rec_loss"]
-        self.log_dict(log_dict_ae)
-        self.log_dict(log_dict_disc)
+        self.log_dict(log_dict_ae, sync_dist=True)
+        self.log_dict(log_dict_disc, sync_dist=True)
         return self.log_dict
     
     def validation_epoch_end(self, outputs):

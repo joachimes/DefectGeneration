@@ -1,6 +1,6 @@
 state:
   mode: train
-  load: True
+  load: False
   version_hparams: [dataset_type, batch_size, latent_dim, n_embed]
   model_name: VQModel
   monitor: val_rec_loss
@@ -39,7 +39,7 @@ dataset:
   camera: 2
   weighted_sampling: 1
   num_workers: 8
-  batch_size: 10
+  batch_size: 16
   img_size: 256
   dataset_type: Synthetic_generative
   transform:

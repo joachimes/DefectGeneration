@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from models.latentDiff_utils.VAEloss import  NLayerDiscriminator, weights_init, LPIPS, hinge_d_loss, vanilla_d_loss
+from models.latentDiff_utils.VAEloss import  NLayerDiscriminator, weights_init, LPIPS, LPIPS_extended, hinge_d_loss, vanilla_d_loss
 
 def exists(x):
     return x is not None
@@ -52,7 +52,10 @@ class VQLPIPSWithDiscriminator(nn.Module):
         self.pixel_weight = pixelloss_weight
         if perceptual_loss == "lpips":
             print(f"{self.__class__.__name__}: Running with LPIPS.")
-            self.perceptual_loss = LPIPS().eval()
+            if disc_in_channels == 3:
+                self.perceptual_loss = LPIPS().eval()
+            else:
+                self.perceptual_loss = LPIPS_extended().eval()
         else:
             raise ValueError(f"Unknown perceptual loss: >> {perceptual_loss} <<")
         self.perceptual_weight = perceptual_weight

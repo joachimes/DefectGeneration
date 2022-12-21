@@ -1,11 +1,11 @@
 state:
   mode: train
   load: False
-  version_hparams: [dataset_type, batch_size, latent_dim]
+  version_hparams: [dataset_type, batch_size, img_size ]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
   gpu: [0]
-  precision: mixed
+  precision: 
 
 model:
   lr: 1.0e-06
@@ -21,33 +21,33 @@ model:
   timesteps: 1000
   first_stage_key: image
   cond_stage_key: 2
-  image_size: 32
-  channels: 4
+  image_size: 16
+  channels: 32
   cond_stage_trainable: true
+  use_ema: False
+  scale_factor: 0.18215
   conditioning_key: crossattn
-  monitor: val/loss_simple_ema
 
   first_stage_config:
-    first_stage_model: VQModelInterface
-    n_embed: 16384
-    latent_dim: 8
-    ckpt_path: tb_logs/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Synthetic_generative_10_8_16384_15/model_epoch=15_val_loss=0.000.ckpt
+    first_stage_model: VAEInterface
+    latent_dim: 32
+    ckpt_path: tb_logs/VariationalAutoEncoder_CAM2/dattyp_lr_batsiz_numdef/Synthetic_generative_4.5e-06_6_15/model_epoch=21_val_loss=0.000.ckpt
     AEcfg:
-      double_z: False
-      z_channels: 8
+      double_z: true
+      z_channels: 32
       img_size: 256
       channels: 3
       out_ch: 3
       init_dim: 128
       dim_mult: [1, 1, 2, 2, 4]
       num_res_blocks: 2
-      attn_resolutions: [16]
+      attn_resolutions: [16, 8]
       resnet_block_groups: 8
     losscfg: identity
   unet_config:
     image_size: 16
-    in_channels: 8
-    out_channels: 8
+    in_channels: 32
+    out_channels: 32
     model_channels: 256
     attention_resolutions: [4, 2, 1]
     num_res_blocks: 2
@@ -55,9 +55,9 @@ model:
     num_head_channels: 32
     use_spatial_transformer: true
     transformer_depth: 1
-    context_dim: 512
+    context_dim: 9
   cond_stage_config:
-    embed_dim: 8
+    embed_dim: 9
     key: 2
     n_classes: 
 
@@ -65,8 +65,8 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 1
-  batch_size: 10
+  num_workers: 8
+  batch_size: 64
   img_size: 256
   dataset_type: Synthetic_generative
   transform:
