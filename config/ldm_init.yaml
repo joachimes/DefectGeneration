@@ -9,8 +9,8 @@ state:
 
 model:
   lr: 1.0e-06
-  patience: 200
-  max_epochs: 500
+  patience: 5
+  max_epochs: 50
   num_defects: None
   defect_names: None
 
@@ -31,7 +31,7 @@ model:
     first_stage_model: VQModelInterface
     n_embed: 16384
     latent_dim: 8
-    ckpt_path: tb_logs/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Synthetic_generative_10_8_16384_15/model_epoch=15_val_loss=0.000.ckpt
+    ckpt_path: tb_logs/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Synthetic_generative_10_8_16384_15/model_epoch=46_val_loss=0.000.ckpt
     AEcfg:
       double_z: False
       z_channels: 8
