@@ -355,14 +355,14 @@ class DDPM(LitTrainer):
         loss, loss_dict = self.shared_step(batch)
 
         self.log_dict(loss_dict, prog_bar=True,
-                      logger=True, on_step=True, on_epoch=True)
+                      logger=True, on_step=True, on_epoch=True, sync_dist=True)
 
         self.log("global_step", self.global_step,
-                 prog_bar=True, logger=True, on_step=True, on_epoch=False)
+                 prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
 
         if self.use_scheduler:
             lr = self.optimizers().param_groups[0]['lr']
-            self.log('lr_abs', lr, prog_bar=True, logger=True, on_step=True, on_epoch=False)
+            self.log('lr_abs', lr, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
         
         if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
             print(f'logging samples at step {self.global_step}')
@@ -376,8 +376,8 @@ class DDPM(LitTrainer):
         with self.ema_scope():
             _, loss_dict_ema = self.shared_step(batch)
             loss_dict_ema = {key + '_ema': loss_dict_ema[key] for key in loss_dict_ema}
-        self.log_dict(loss_dict_no_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True)
-        self.log_dict(loss_dict_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        self.log_dict(loss_dict_no_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=True)
+        self.log_dict(loss_dict_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=True)
 
     def on_train_batch_end(self, *args, **kwargs):
         if self.use_ema:
@@ -1281,7 +1281,7 @@ class LatentDiffusion(DDPM):
             self.fixed_val_imgs, _, self.v_xc, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
             self.fixed_train_imgs = self.fixed_train_imgs[:16]
             self.fixed_val_imgs = self.fixed_val_imgs[:16]
-            self.logger.experiment.log_hyperparams({'fixed_train_labels': self.t_xc[:16], 'fixed_val_labels': self.v_xc[:16]})
+            self.logger.experiment.add_hparams({'fixed_train_labels': self.t_xc[:16], 'fixed_val_labels': self.v_xc[:16]}, {})
             self.xc_combined = torch.cat([self.t_xc[:16], self.v_xc[:16]], dim=0) # Combine to make single diffusion pass
             self.xc_combined = self.get_learned_conditioning(self.xc_combined.to(self.device))
 

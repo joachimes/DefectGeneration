@@ -1,6 +1,6 @@
 state:
   mode: train
-  load: True
+  load: False
   version_hparams: [dataset_type, batch_size, latent_dim, n_embed]
   model_name: VQModel
   monitor: val_rec_loss
@@ -17,7 +17,7 @@ model:
   n_embed: 16384
   losscfg:
     disc_conditional: false
-    disc_in_channels: 3
+    disc_in_channels: 4
     disc_start: 250001
     disc_weight: 0.75
     disc_num_layers: 2
@@ -27,7 +27,7 @@ model:
     z_channels: 8
     img_size: 256
     channels: 4
-    out_ch: 3
+    out_ch: 4
     init_dim: 128
     dim_mult: [1, 1, 2, 2, 4]
     num_res_blocks: 2
@@ -38,7 +38,7 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 8
+  num_workers: 10
   batch_size: 10
   img_size: 256
   dataset_type: Synthetic_generative
