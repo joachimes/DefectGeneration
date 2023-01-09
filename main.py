@@ -45,11 +45,13 @@ def main(cfg: DictConfig) -> None:
                                     , filename='model_{epoch}_{val_loss:.3f}'
                                     , verbose=True
                                     , save_top_k=cfg.model.save_top_k if 'save_top_k' in cfg.model else 1
-                                    , mode='min'))
+                                    , mode='min'
+                                    , save_last=cfg.state.save_last if 'save_last' in cfg.state else False))
     trainer = Trainer(
         accelerator='gpu' if cfg.state.gpu is not None else 'cpu',
         devices=cfg.state.gpu if cfg.state.gpu and is_available() else None,
-        max_epochs=cfg.model.max_epochs,
+        # max_epochs=cfg.model.max_epochs,
+        max_time={'days': 3},
         logger=logger,
         accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
