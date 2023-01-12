@@ -1,6 +1,7 @@
 state:
   mode: train
   load: False
+  load_epoch: 49
   version_hparams: [dataset_type, batch_size, img_size, channels]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema

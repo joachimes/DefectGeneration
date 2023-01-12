@@ -64,8 +64,8 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
     master_dict['train'] = {}
     master_dict = generate_sets(path, master_dict, origins, cam, def_dict)
     # ensure that all classes are in all splits else pop
-    if 'Real' not in origins:
-        master_dict = add_real_good(path, master_dict, cam, def_dict)
+    # if 'Real' not in origins:
+    #     master_dict = add_real_good(path, master_dict, cam, def_dict)
     for split in list(master_dict):
         rest_splits = [k for k in master_dict.keys() if k != split]
         for folder_class in list(master_dict[split]):
@@ -97,10 +97,11 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
 
 if __name__ == '__main__':
     origins_combinations = [['Real'], ['Synthetic'], ['Real', 'Synthetic']]
-    origins_combinations =[ ['Synthetic']]
+    origins_combinations = [ ['Diffusion'], ['Diffusion', 'Real', 'Synthetic'], ['Diffusion', 'Real'], ['Diffusion', 'Synthetic']]
+    # origins_combinations =[ ['Synthetic']]
     # iterate over all wanted combinations of origins
     for origins in origins_combinations: 
-        for cam in [2,3,5,6]:
+        for cam in [2]:#,3,5,6]:
 
             path = '/nn-seidenader-gentofte\\tjsd\\VisData'
             

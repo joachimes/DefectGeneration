@@ -8,7 +8,7 @@ state:
 
 model:
   lr: 1e-5
-  patience: 15
+  patience: 10
   max_epochs: 100
   num_classes: None
   class_names: None

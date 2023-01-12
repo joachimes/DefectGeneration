@@ -1,7 +1,7 @@
 state:
   mode: train
   load: True
-  load_epoch: 14
+  load_epoch: 13
   version_hparams: [dataset_type, batch_size, img_size, channels]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
@@ -35,7 +35,7 @@ model:
     first_stage_model: VQModelInterface
     n_embed: 16384
     latent_dim: 4
-    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_generative_9_4_16384_19\model_epoch=18_val_loss=0.000.ckpt
+    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_generative_9_4_16384_19\epoch11.ckpt
     AEcfg:
       double_z: False
       z_channels: 4
@@ -71,7 +71,7 @@ dataset:
   camera: 2
   weighted_sampling: 1
   num_workers: 4
-  batch_size: 5
+  batch_size: 4
   img_size: 256
   dataset_type: Real_generative
   transform:
