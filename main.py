@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
     
     logger = TensorBoardLogger(log_folder, name=model_name, version=osp.join(version_name, version))
     callbacks = []
-    monitor = cfg.state.monitor if cfg.state.monitor else 'val_loss'
+    monitor = cfg.state.monitor if 'monitor' in cfg.state else 'val_loss'
     callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor=monitor))
     callbacks.append(ModelCheckpoint(dirpath=model_path
                                     , monitor= monitor
