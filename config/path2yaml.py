@@ -96,8 +96,8 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
         yaml.dump(master_dict, outfile, default_flow_style=False)
 
 if __name__ == '__main__':
-    origins_combinations = [['Real'], ['Synthetic'], ['Real', 'Synthetic']]
     origins_combinations = [ ['Diffusion'], ['Diffusion', 'Real', 'Synthetic'], ['Diffusion', 'Real'], ['Diffusion', 'Synthetic']]
+    origins_combinations = [['Synthetic'], ['Real', 'Synthetic']]
     # origins_combinations =[ ['Synthetic']]
     # iterate over all wanted combinations of origins
     for origins in origins_combinations: 
