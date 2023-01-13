@@ -88,6 +88,7 @@ def sample(cfg, model, defect_info, model_version, num_images=5, batch_size=1, s
     outdir = f'../img/{cfg.state.model_name}'
     outdir = f'/nn-seidenader-gentofte/TJSD/VisData/diffusion/CAM{cfg.dataset.camera}'
     sampler = DDIMSampler(model)
+    sampler.ddpm_num_timesteps = steps
     with torch.no_grad():
         with model.ema_scope():
             for defect_name in defect_info:
@@ -120,7 +121,7 @@ def sample(cfg, model, defect_info, model_version, num_images=5, batch_size=1, s
 
                         
                         pred_img = predicted_image.cpu().numpy().transpose(0,2,3,1)[0]*255
-                        Image.fromarray(pred_img.astype(np.uint8)).save(osp.join(outpath, f'{i}_step-{step}.jpg'))
+                        Image.fromarray(pred_img.astype(np.uint8)).save(osp.join(outpath, f'{i}_step-{step}of-{steps}.jpg'))
                     image = torch.clamp((img_batch["image"]+1.0)/2.0,
                                         min=0.0, max=1.0)
                     img = image.cpu().numpy().transpose(0,2,3,1)[0]*255
