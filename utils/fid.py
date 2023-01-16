@@ -157,7 +157,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     return diff.dot(diff) + np.trace(sigma1) + np.trace(sigma2) - 2 * tr_covmean
 
 
-def preprocess_image(im):
+def preprocess_image(im, shape=299):
     """Resizes and shifts the dynamic range of image to 0-1
     Args:
         im: np.array, shape: (H, W, 3), dtype: float32 between 0-1 or np.uint8
@@ -179,7 +179,7 @@ def preprocess_image(im):
     return im
 
 
-def preprocess_images(images, use_multiprocessing):
+def preprocess_images(images, use_multiprocessing, shape=299):
     """Resizes and shifts the dynamic range of image to 0-1
     Args:
         images: np.array, shape: (N, H, W, 3), dtype: float32 between 0-1 or np.uint8
@@ -193,13 +193,13 @@ def preprocess_images(images, use_multiprocessing):
             for im in images:
                 job = pool.apply_async(preprocess_image, (im,))
                 jobs.append(job)
-            final_images = torch.zeros(images.shape[0], 3, 299, 299)
+            final_images = torch.zeros(images.shape[0], 3, shape, shape)
             for idx, job in enumerate(jobs):
                 im = job.get()
                 final_images[idx] = im#job.get()
     else:
-        final_images = torch.stack([preprocess_image(im) for im in images], dim=0)
-    assert final_images.shape == (images.shape[0], 3, 299, 299)
+        final_images = torch.stack([preprocess_image(im, shape) for im in images], dim=0)
+    assert final_images.shape == (images.shape[0], 3, shape, shape)
     assert final_images.max() <= 1.0
     assert final_images.min() >= 0.0
     assert final_images.dtype == torch.float32
