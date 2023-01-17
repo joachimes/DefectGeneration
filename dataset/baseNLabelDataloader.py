@@ -1,9 +1,10 @@
 import os
+import numpy as np
 from PIL import Image
 
 import torch
 import torchvision.transforms as T
-
+from tqdm import tqdm
 from dataset.baseDataloader import BaseVialLoader
 
 
@@ -17,7 +18,7 @@ class VialNLabelLoader(BaseVialLoader):
         self.label_pure_zero = transform(torch.zeros((1, w, h)))
         
 
-        for i in range(len(self.img_paths)):
+        for i in tqdm(range(len(self.img_paths))):
             label_path = self.img_paths[i]['path'].replace('images','labels').replace('.jpeg', '_label.jpeg').replace('.jpg', '_label.jpg').replace('.png', '_label.png')
             splitPath = os.sep + os.path.join(*label_path.split(os.sep)[:-1])
 
@@ -40,9 +41,11 @@ class VialNLabelLoader(BaseVialLoader):
         d_image = self.transform(Image.open(defect_dict['path']).convert('RGB'), self.setting)
         
         label = Image.open(defect_dict['label_path']).convert('L') if defect_dict['label_path'] else self.label_pure_zero
+
         d_label = self.transform(label, self.setting)
-        if d_label.shape[0] == 3:
-            print('booo')
+        d_label[d_label < 0.] = -1
+        d_label[d_label >= 0.] = 1
+
         d_combined = torch.cat([d_image, d_label], dim=0)
         
         d_type = self.defect_cat[defect_dict['type']]
