@@ -7,6 +7,7 @@ class LitTrainer(LightningModule):
         self.lr = lr
         self.weight_decay = weight_decay if weight_decay else 0
         self.model = None
+        self.save_hyperparameters()
     
     def _common_step(self, *args):
         pass
