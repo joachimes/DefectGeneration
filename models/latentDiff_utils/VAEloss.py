@@ -1,11 +1,12 @@
+from os import sep as os_sep
 import torch
 from torch import nn
 import torch.nn.functional as F
 from torchvision import models
 from collections import namedtuple
 
+from models.latentDiff_utils.util import get_ckpt_path
 from models.latentDiff_utils.VAEDiscriminator import NLayerDiscriminator, weights_init
-
 
 # ------------ LPIPS loss  ------------
 
@@ -94,23 +95,23 @@ class LPIPS(nn.Module):
         self.lin2 = NetLinLayer(self.chns[2], use_dropout=use_dropout)
         self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
         self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
-        # self.load_from_pretrained()
+        self.load_from_pretrained()
         for param in self.parameters():
             param.requires_grad = False
 
-    # def load_from_pretrained(self, name="vgg_lpips"):
-    #     ckpt = get_ckpt_path(name, "taming/modules/autoencoder/lpips")
-    #     self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
-    #     print("loaded pretrained LPIPS loss from {}".format(ckpt))
+    def load_from_pretrained(self, name="vgg_lpips"):
+        ckpt = get_ckpt_path(name, f"models{os_sep}latentDiff_utils{os_sep}weights")
+        self.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+        print("loaded pretrained LPIPS loss from {}".format(ckpt))
 
-    @classmethod
-    def from_pretrained(cls, name="vgg_lpips"):
-        if name != "vgg_lpips":
-            raise NotImplementedError
-        model = cls()
-        # ckpt = get_ckpt_path(name)
-        # model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
-        return model
+    # @classmethod
+    # def from_pretrained(cls, name="vgg_lpips"):
+    #     if name != "vgg_lpips":
+    #         raise NotImplementedError
+    #     model = cls()
+    #     ckpt = get_ckpt_path(name)
+    #     model.load_state_dict(torch.load(ckpt, map_location=torch.device("cpu")), strict=False)
+    #     return model
 
     def forward(self, input, target):
         in0_input, in1_input = (self.scaling_layer(input), self.scaling_layer(target))
@@ -127,6 +128,33 @@ class LPIPS(nn.Module):
             val += res[l]
         return val
 
+
+class LPIPS_extended(LPIPS):
+    def __init__(self, use_dropout=True):
+        super().__init__(use_dropout)
+        self.chns = [ 128, 256, 512, 1024, 1024 ]  # vg16 features
+        self.lin0 = NetLinLayer(self.chns[0], use_dropout=use_dropout)
+        self.lin1 = NetLinLayer(self.chns[1], use_dropout=use_dropout)
+        self.lin2 = NetLinLayer(self.chns[2], use_dropout=use_dropout)
+        self.lin3 = NetLinLayer(self.chns[3], use_dropout=use_dropout)
+        self.lin4 = NetLinLayer(self.chns[4], use_dropout=use_dropout)
+
+    def forward(self, input, target):
+        in0_input, in1_input = (self.scaling_layer(input[:,:3]), self.scaling_layer(target[:,:3]))
+        in2_input, in3_input = (self.scaling_layer(input[:,1:]), self.scaling_layer(target[:,1:]))
+        outs0, outs1 = self.net(in0_input), self.net(in1_input)
+        outs2, outs3 = self.net(in2_input), self.net(in3_input)
+        feats0, feats1, diffs = {}, {}, {}
+        lins = [self.lin0, self.lin1, self.lin2, self.lin3, self.lin4]
+        for kk in range(len(self.chns)):
+            feats0[kk], feats1[kk] = normalize_tensor(torch.cat([outs0[kk], outs2[kk]], dim=1)), normalize_tensor(torch.cat([outs1[kk], outs3[kk]], dim=1))
+            diffs[kk] = (feats0[kk] - feats1[kk]) ** 2
+
+        res = [spatial_average(lins[kk].model(diffs[kk]), keepdim=True) for kk in range(len(self.chns))]
+        val = res[0]
+        for l in range(1, len(self.chns)):
+            val += res[l]
+        return val
 
 
 # ------------ LPIPS loss with discriminator ------------

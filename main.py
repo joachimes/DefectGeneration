@@ -8,7 +8,7 @@ from dataset.vial_loader import VialDataModule
 import tensorboard
 import hydra 
 from omegaconf import DictConfig, OmegaConf
-from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatch, VariationalAutoEncoder
+from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatch, VAEModel, VQModel, LatentDiffusion
 
 
 @hydra.main(version_base=None, config_path="config", config_name="classifier")
@@ -45,12 +45,15 @@ def main(cfg: DictConfig) -> None:
                                     , filename='model_{epoch}_{val_loss:.3f}'
                                     , verbose=True
                                     , save_top_k=cfg.model.save_top_k if 'save_top_k' in cfg.model else 1
-                                    , mode='min'))
+                                    , mode='min'
+                                    , save_last=cfg.state.save_last if 'save_last' in cfg.state else False))
     trainer = Trainer(
-        accelerator="gpu",
-        devices=cfg.state.gpu if cfg.state.gpu and is_available() else 0,
-        max_epochs=cfg.model.max_epochs,
+        accelerator='gpu' if cfg.state.gpu is not None else 'cpu',
+        devices=cfg.state.gpu if cfg.state.gpu and is_available() else None,
+        # max_epochs=cfg.model.max_epochs,
+        max_time={'days': 3},
         logger=logger,
+        accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
         precision=16 if cfg.state.precision == 'mixed' else 32,
         # profiler='simple'
@@ -60,7 +63,8 @@ def main(cfg: DictConfig) -> None:
         weight_file = [f_name for f_name in model_dir if 'model_' in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      
-    accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__, MixNMatch.__name__, VariationalAutoEncoder.__name__]
+    accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__, MixNMatch.__name__, VAEModel.__name__
+                        , VQModel.__name__, LatentDiffusion.__name__]
     assert cfg.state.model_name in accepted_models, 'Model not supported' 
     
     model = eval(cfg.state.model_name)(**cfg.model)
