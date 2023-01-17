@@ -76,12 +76,13 @@ class MixNMatch(LitTrainer):
             self.combined_c = torch.cat([fixed_train_real_c[:16], fixed_val_real_c[:16]], dim=0)
 
         # Sample 
-        fake_z2, _, _, _ = self.encoder( self.combined_z.to(self.device), 'softmax' )
-        fake_z1, fake_b, _, _ = self.encoder( self.combined_b.to(self.device), 'softmax' )
-        _, _, fake_p, _ = self.encoder( self.combined_p.to(self.device), 'softmax' )
-        _, _, _, fake_c = self.encoder( self.combined_c.to(self.device), 'softmax' )    
+        # fake_z2, _, _, _ = self.encoder( self.combined_z.to(self.device), 'softmax' )
+        # fake_z1, fake_b, _, _ = self.encoder( self.combined_b.to(self.device), 'softmax' )
+        # _, _, fake_p, _ = self.encoder( self.combined_p.to(self.device), 'softmax' )
+        # _, _, _, fake_c = self.encoder( self.combined_c.to(self.device), 'softmax' )    
         
-        fake_imgs, _, _, _ = self.netG(fake_z1, fake_z2, fake_c, fake_p,  fake_b, 'code' )
+        # fake_imgs, _, _, _ = self.netG(fake_z1, fake_z2, fake_c, fake_p,  fake_b, 'code' )
+        fake_imgs, _, _, _ = self.netG(self.combined_z, self.combined_z, self.combined_c, self.combined_p,  self.combined_b, 'code' )
 
         
         grid = make_grid((fake_imgs[:16] + 1) * 0.5, nrow=4)
