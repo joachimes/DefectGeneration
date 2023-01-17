@@ -38,7 +38,7 @@ def main(cfg: DictConfig) -> None:
     
     logger = TensorBoardLogger(log_folder, name=model_name, version=osp.join(version_name, version))
     callbacks = []
-    monitor = cfg.state.monitor if cfg.state.monitor else 'val_loss'
+    monitor = cfg.state.monitor if 'monitor' in cfg.state else 'val_loss'
     callbacks.append(EarlyStopping(patience=cfg.model.patience, monitor=monitor))
     callbacks.append(ModelCheckpoint(dirpath=model_path
                                     , monitor= monitor
@@ -50,8 +50,8 @@ def main(cfg: DictConfig) -> None:
     trainer = Trainer(
         accelerator='gpu' if cfg.state.gpu is not None else 'cpu',
         devices=cfg.state.gpu if cfg.state.gpu and is_available() else None,
-        # max_epochs=cfg.model.max_epochs,
-        max_time={'days': 3},
+        max_epochs=cfg.model.max_epochs,
+        # max_time={'hours': 17},
         logger=logger,
         accumulate_grad_batches=cfg.state.gradient_accum if 'gradient_accum' in cfg.state else None,
         callbacks=callbacks,
@@ -60,7 +60,8 @@ def main(cfg: DictConfig) -> None:
     )
     weight_path = None
     if cfg.state.load and len((model_dir := os.listdir(model_path))) > 0:
-        weight_file = [f_name for f_name in model_dir if 'model_' in f_name][-1]
+        model_epoch = f"epoch={cfg.state.load_epoch}" if cfg.state.load_epoch else 'epoch='
+        weight_file = [f_name for f_name in model_dir if model_epoch in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      
     accepted_models = [Efficientnet.__name__, DiffusionNet.__name__, ConditionalDiffusionNet.__name__, MixNMatch.__name__, VAEModel.__name__
