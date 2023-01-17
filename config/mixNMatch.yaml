@@ -25,10 +25,10 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 0
-  num_workers: 14
+  num_workers: 8
   batch_size: 12
   img_size: 64
-  dataset_type: Real_Synthetic
+  dataset_type: Synthetic_generative
   loader: MixNMatchLoader
   base_size: 64
   branch_num: 3
