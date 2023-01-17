@@ -1,0 +1,79 @@
+state:
+  mode: train
+  load: True
+  load_epoch: 14
+  version_hparams: [dataset_type, batch_size, img_size, channels]
+  model_name: LatentDiffusion
+  monitor: val/loss_simple_ema
+  gpu: [0]
+  save_last: True
+  gradient_accum: 8
+  precision: 
+
+model:
+  accum_gradients: True
+  lr: 1.0e-06
+  patience: 5
+  max_epochs: 50
+  num_defects: None
+  defect_names: None
+
+  linear_start: 0.0015
+  linear_end: 0.0205
+  num_timesteps_cond: 1
+  log_every_t: 200
+  timesteps: 1000
+  first_stage_key: image
+  cond_stage_key: 2
+  image_size: 32
+  channels: 4
+  cond_stage_trainable: true
+  conditioning_key: crossattn
+  monitor: val/loss_epoch
+
+  first_stage_config:
+    first_stage_model: VQModelInterface
+    n_embed: 16384
+    latent_dim: 4
+    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_generative_9_4_16384_19\model_epoch=18_val_loss=0.000.ckpt
+    AEcfg:
+      double_z: False
+      z_channels: 4
+      img_size: 256
+      channels: 3
+      out_ch: 3
+      init_dim: 128
+      dim_mult: [1, 2, 2, 4]
+      num_res_blocks: 2
+      attn_resolutions: [32]
+      resnet_block_groups: 8
+    losscfg: identity
+  unet_config:
+    image_size: 32
+    in_channels: 4
+    out_channels: 4
+    model_channels: 256
+    attention_resolutions: [8, 4, 1]
+    num_res_blocks: 2
+    channel_mult: [1, 2, 3, 4]
+    num_head_channels: 8
+    use_spatial_transformer: true
+    transformer_depth: 1
+    resblock_updown: True
+    context_dim: 9
+  cond_stage_config:
+    embed_dim: 9
+    key: 2
+    n_classes:
+
+dataset:
+  data_path: /nn-seidenader-gentofte/TJSD/VisData
+  camera: 2
+  weighted_sampling: 1
+  num_workers: 4
+  batch_size: 5
+  img_size: 256
+  dataset_type: Real_Synthetic
+  transform:
+
+      

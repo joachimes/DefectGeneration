@@ -15,7 +15,8 @@ class VAEModel(LitTrainer):
         self.encoder = StableEncoder(**AEcfg)
         self.decoder = StableDecoder(**AEcfg)
 
-        self.loss = LPIPSWithDiscriminator(**losscfg)
+        if isinstance(losscfg, dict):
+            self.loss = LPIPSWithDiscriminator(**losscfg)
 
         assert AEcfg["double_z"]
         self.quant_conv = torch.nn.Conv2d(2*AEcfg["z_channels"], 2*latent_dim, 1)
@@ -46,6 +47,18 @@ class VAEModel(LitTrainer):
             z = posterior.mode()
         dec = self.decode(z)
         return dec, posterior
+
+
+    def init_from_ckpt(self, path, ignore_keys=list()):
+        sd = torch.load(path, map_location="cpu")["state_dict"]
+        keys = list(sd.keys())
+        for k in keys:
+            for ik in ignore_keys:
+                if k.startswith(ik):
+                    print("Deleting key {} from state_dict.".format(k))
+                    del sd[k]
+        self.load_state_dict(sd, strict=False)
+        print(f"Restored from {path}")
 
 
     @torch.no_grad()
@@ -144,29 +157,8 @@ class VAEModel(LitTrainer):
 
 
 class VAEInterface(VAEModel):
-    def __init__(self, embed_dim, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.embed_dim = embed_dim
+        self.loss = nn.Identity()
 
-    def init_from_ckpt(self, path, ignore_keys=list()):
-        sd = torch.load(path, map_location="cpu")["state_dict"]
-        keys = list(sd.keys())
-        for k in keys:
-            for ik in ignore_keys:
-                if k.startswith(ik):
-                    print("Deleting key {} from state_dict.".format(k))
-                    del sd[k]
-        self.load_state_dict(sd, strict=False)
-        print(f"Restored from {path}")
-    
-    def encode(self, x):
-        h = self.encoder(x)
-        moments = self.quant_conv(h)
-        posterior = DiagonalGaussianDistribution(moments)
-        return posterior
-
-    def decode(self, h):
-        h = self.post_quant_conv(h)
-        dec = self.decoder(h)
-        return dec
 

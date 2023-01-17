@@ -1,6 +1,6 @@
 state:
   mode: train
-  load: True
+  load: False
   version_hparams: [dataset_type, batch_size, latent_dim, n_embed]
   model_name: VQModel
   monitor: val_rec_loss
@@ -9,29 +9,29 @@ state:
 
 model:
   lr: 4.5e-06
-  patience: 200
-  max_epochs: 500
+  patience: 10
+  max_epochs: 50
   num_defects: None
   defect_names: None
-  latent_dim: 8
+  latent_dim: 4
   n_embed: 16384
   losscfg:
     disc_conditional: false
     disc_in_channels: 3
-    disc_start: 250001
-    disc_weight: 0.75
     disc_num_layers: 2
+    disc_start: 1
+    disc_weight: 0.6
     codebook_weight: 1.0
   AEcfg:
     double_z: False
-    z_channels: 8
+    z_channels: 4
     img_size: 256
     channels: 3
     out_ch: 3
     init_dim: 128
-    dim_mult: [1, 1, 2, 2, 4]
+    dim_mult: [1, 2, 2, 4]
     num_res_blocks: 2
-    attn_resolutions: [16]
+    attn_resolutions: [32]
     resnet_block_groups: 8
 
 dataset:
@@ -39,9 +39,7 @@ dataset:
   camera: 2
   weighted_sampling: 1
   num_workers: 8
-  batch_size: 10
+  batch_size: 8
   img_size: 256
-  dataset_type: Synthetic_generative
+  dataset_type: Real_Synthetic
   transform:
-
-      

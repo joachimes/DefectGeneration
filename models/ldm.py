@@ -78,6 +78,7 @@ class DDPM(LitTrainer):
                  use_positional_encodings=False,
                  learn_logvar=False,
                  logvar_init=0.,
+                 accum_gradients=False,
                  **kwargs
                  ):
         super().__init__(**kwargs)
@@ -122,6 +123,9 @@ class DDPM(LitTrainer):
             self.logvar = nn.Parameter(self.logvar, requires_grad=True)
         self.fixed_train_imgs = None
         self.fixed_val_imgs = None
+        self.first_grad_accum = True
+        self.accum_gradients = accum_gradients
+
 
 
     def register_schedule(self, given_betas=None, beta_schedule="linear", timesteps=1000,
@@ -355,18 +359,21 @@ class DDPM(LitTrainer):
         loss, loss_dict = self.shared_step(batch)
 
         self.log_dict(loss_dict, prog_bar=True,
-                      logger=True, on_step=True, on_epoch=True)
+                      logger=True, on_step=True, on_epoch=True, sync_dist=True)
 
         self.log("global_step", self.global_step,
-                 prog_bar=True, logger=True, on_step=True, on_epoch=False)
+                 prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
 
         if self.use_scheduler:
             lr = self.optimizers().param_groups[0]['lr']
-            self.log('lr_abs', lr, prog_bar=True, logger=True, on_step=True, on_epoch=False)
-        
-        if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
-            print(f'logging samples at step {self.global_step}')
-            self.log_samples()
+            self.log('lr_abs', lr, prog_bar=True, logger=True, on_step=True, on_epoch=False, sync_dist=True)
+        if self.accum_gradients:
+            if ((self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0) and self.first_grad_accum: # Limit sampling
+                print(f'logging samples at step {self.global_step}')
+                self.log_samples()
+            
+            if (self.global_step < 1000 and self.global_step % 100 == 30) or self.global_step % 2000 == 30: # RESET GRAD ACCUM
+                self.first_grad_accum = True
 
         return loss
 
@@ -376,8 +383,8 @@ class DDPM(LitTrainer):
         with self.ema_scope():
             _, loss_dict_ema = self.shared_step(batch)
             loss_dict_ema = {key + '_ema': loss_dict_ema[key] for key in loss_dict_ema}
-        self.log_dict(loss_dict_no_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True)
-        self.log_dict(loss_dict_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True)
+        self.log_dict(loss_dict_no_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=True)
+        self.log_dict(loss_dict_ema, prog_bar=False, logger=True, on_step=False, on_epoch=True, sync_dist=True)
 
     def on_train_batch_end(self, *args, **kwargs):
         if self.use_ema:
@@ -889,8 +896,15 @@ class LatentDiffusion(DDPM):
         loss = self(x, c)
         return loss
 
+    def training_epoch_end(self, outputs):
+        if self.accum_gradients:
+            self.first_grad_accum = True
+
+    
     def validation_epoch_end(self, outputs):
-        self.log_samples()
+        if self.accum_gradients and self.first_grad_accum:
+            self.log_samples()
+
 
     def forward(self, x, c, *args, **kwargs):
         t = torch.randint(0, self.num_timesteps, (x.shape[0],), device=self.device).long()
@@ -1273,32 +1287,43 @@ class LatentDiffusion(DDPM):
 
     @torch.no_grad()
     def log_samples(self):
-
+        
         if self.fixed_train_imgs == None:
             # concatenate multiple validation images from different batches 
-
             self.fixed_train_imgs, _, self.t_xc, *_ = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
             self.fixed_val_imgs, _, self.v_xc, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
-            self.fixed_train_imgs = self.fixed_train_imgs[:16]
-            self.fixed_val_imgs = self.fixed_val_imgs[:16]
-            self.logger.experiment.log_hyperparams({'fixed_train_labels': self.t_xc[:16], 'fixed_val_labels': self.v_xc[:16]})
-            self.xc_combined = torch.cat([self.t_xc[:16], self.v_xc[:16]], dim=0) # Combine to make single diffusion pass
+            self.log_batch_size = min(16, len(self.fixed_train_imgs))
+            self.nrow = int(np.sqrt(self.log_batch_size))
+            
+            self.fixed_train_imgs = self.fixed_train_imgs[:self.log_batch_size]
+            self.fixed_val_imgs = self.fixed_val_imgs[:self.log_batch_size]
+            self.logger.experiment.add_hparams({'fixed_train_labels': self.t_xc[:self.log_batch_size], 'fixed_val_labels': self.v_xc[:self.log_batch_size]}, {})
+            self.xc_combined = torch.cat([self.t_xc[:self.log_batch_size], self.v_xc[:self.log_batch_size]], dim=0) # Combine to make single diffusion pass
             self.xc_combined = self.get_learned_conditioning(self.xc_combined.to(self.device))
 
-            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_train', grid, 0)
-            grid = make_grid((self.fixed_val_imgs + 1) * 0.5, nrow=4)
-            self.logger.experiment.add_image(f'imgs/real_val', grid, 0)
+            grid = make_grid((self.fixed_train_imgs[:, :3] + 1) * 0.5, nrow=self.nrow)
+            self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+            grid = make_grid((self.fixed_val_imgs[:, :3] + 1) * 0.5, nrow=self.nrow)
+            self.logger.experiment.add_image(f'sd_imgs/real_val', grid, 0)
+            if self.fixed_train_imgs.shape[1] == 4:
+                grid = make_grid((self.fixed_train_imgs[:, 3] + 1) * 0.5, nrow=self.nrow)
+                self.logger.experiment.add_image(f'sd_imgs/real_label_train', grid, 0)
+                grid = make_grid((self.fixed_val_imgs[:, 3] + 1) * 0.5, nrow=self.nrow)
+                self.logger.experiment.add_image(f'sd_imgs/real_label_val', grid, 0)
 
         with self.ema_scope("Plotting"):
-            samples, _ = self.sample_log(cond=self.xc_combined,batch_size=16*2,ddim=True,
+            torch.cuda.empty_cache()
+            samples, _ = self.sample_log(cond=self.xc_combined,batch_size=self.log_batch_size*2,ddim=True,
                                                         ddim_steps=200,eta=1)
         x_samples = self.decode_first_stage(samples)
-        grid = make_grid((x_samples[:16] + 1) * 0.5, nrow=4)
+        grid = make_grid((x_samples[:self.log_batch_size, :3] + 1) * 0.5, nrow=self.nrow)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_train', grid, self.global_step)
 
-        grid = make_grid((x_samples[16:] + 1) * 0.5, nrow=4)
+        grid = make_grid((x_samples[self.log_batch_size:, :3] + 1) * 0.5, nrow=self.nrow)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_val', grid, self.global_step)
+        if self.accum_gradients:
+            self.first_grad_accum = False
+
 
 
 

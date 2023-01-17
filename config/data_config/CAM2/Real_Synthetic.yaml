@@ -45,14 +45,12 @@ test:
       category: B2
       hash:
       - current_version
-      n_images: 512
+      n_images: 493
       split: test
       versions:
       - A
       - B
-      - C
       - E
-      - H
   DPPST:
     Real:
       category: D1
@@ -98,10 +96,14 @@ test:
       category: Good
       hash:
       - current_version
-      n_images: 4020
+      n_images: 21720
       split: test
       versions:
       - A
+      - B
+      - C
+      - D
+      - E
   MESM:
     Real:
       category: B2
@@ -116,11 +118,10 @@ test:
       category: B1
       hash:
       - current_version
-      n_images: 510
+      n_images: 480
       split: test
       versions:
       - A
-      - B
   MST:
     Real:
       category: B1
@@ -170,9 +171,8 @@ train:
     Synthetic:
       category: A2
       hash:
-      - v0.1 - beak - 16c80de
       - v0.1 - beak - fc348f8
-      n_images: 3963
+      n_images: 2264
       split: train
       versions: []
   CCD:
@@ -195,9 +195,8 @@ train:
     Synthetic:
       category: A3
       hash:
-      - CCD_go
       - v5
-      n_images: 3500
+      n_images: 2500
       split: train
       versions: []
   CnC:
@@ -228,17 +227,13 @@ train:
       versions:
       - A
       - B
-      - C
       - E
-      - H
     Synthetic:
       category: B2
       hash:
-      - v0.1 - ChipS - d10fe97
-      - v0.1 - develop - e6acb3b
-      - v0.1 - HEAD - 2e0c6f8
-      - v0.1 - StopperDefects - cba95ea
-      n_images: 7475
+      - v0.1 - HEAD - 2b9ac9c
+      - v0.1 - Reflectionfix - e565b93a
+      n_images: 2298
       split: train
       versions: []
   DPPST:
@@ -289,9 +284,8 @@ train:
     Synthetic:
       category: D1
       hash:
-      - v0.1 - FOST - fc6b76c - greenCap
-      - v0.1-FOST-5a81437
-      n_images: 2075
+      - v0.1 - main - 3de6d5f2
+      n_images: 2000
       split: train
       versions: []
   GPST:
@@ -307,9 +301,8 @@ train:
       category: D1
       hash:
       - v0.1 - gpst - 59f35e4
-      - v0.1 - gpst - a2100ed
       - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 13093
+      n_images: 8093
       split: train
       versions: []
   Good:
@@ -317,10 +310,21 @@ train:
       category: Good
       hash:
       - current_version
-      n_images: 31980
+      n_images: 171870
       split: train
       versions:
       - A
+      - B
+      - C
+      - D
+      - E
+    Synthetic:
+      category: Good
+      hash:
+      - v0.1 - HEAD - 2b9ac9c
+      n_images: 1940
+      split: train
+      versions: []
   MESM:
     Real:
       category: B2
@@ -333,8 +337,8 @@ train:
     Synthetic:
       category: B2
       hash:
-      - v0.1 - MESM - 064e91a
-      n_images: 2289
+      - v0.1 - FOSTfix - 3986acad
+      n_images: 2000
       split: train
       versions: []
   MSF:
@@ -346,7 +350,6 @@ train:
       split: train
       versions:
       - A
-      - B
     Synthetic:
       category: B1
       hash:
@@ -366,9 +369,8 @@ train:
     Synthetic:
       category: B1
       hash:
-      - version3
-      - version4
-      n_images: 2010
+      - v0.1 - FOSTfix - 3986acad
+      n_images: 1000
       split: train
       versions: []
   PST:
@@ -386,8 +388,8 @@ train:
     Synthetic:
       category: G1
       hash:
-      - v0.1 - PST_JVPR - 91d8936
-      n_images: 1504
+      - v0.1 - main - 3de6d5f2
+      n_images: 1999
       split: train
       versions: []
   SSNPDNeck:
@@ -461,9 +463,7 @@ val:
       versions:
       - A
       - B
-      - C
       - E
-      - H
   DPPST:
     Real:
       category: D1
@@ -509,10 +509,14 @@ val:
       category: Good
       hash:
       - current_version
-      n_images: 3990
+      n_images: 21840
       split: val
       versions:
       - A
+      - B
+      - C
+      - D
+      - E
   MESM:
     Real:
       category: B2
@@ -531,7 +535,6 @@ val:
       split: val
       versions:
       - A
-      - B
   MST:
     Real:
       category: B1
