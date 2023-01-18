@@ -8,7 +8,7 @@ from pytorch_lightning import LightningDataModule
 from dataset.baseDataloader import BaseVialLoader
 from dataset.mixNMatchDataloader import MixNMatchLoader
 from dataset.baseNLabelDataloader import VialNLabelLoader
-from dataset.transforms import GenerativeTransform, ImageTransform
+from dataset.transforms import GenerativeTransform, ImageTransform, CropTransform
 
 
 class VialDataModule(LightningDataModule):
@@ -19,7 +19,9 @@ class VialDataModule(LightningDataModule):
         data_yaml_path = osp.join('config', 'data_config', f'CAM{camera}', dataset_type+'.yaml')
         with open(data_yaml_path, 'r') as d:
             self.data_splits = yaml.safe_load(d)
-        self.transform = transform if transform else GenerativeTransform(img_size=img_size, mean=mean, std=std)
+        valid_transforms = [ImageTransform.__name__, CropTransform.__name__]
+        self.transform = eval(transform) if transform in valid_transforms else GenerativeTransform
+        self.transform = self.transform(img_size=img_size, mean=mean, std=std)
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.vial_loader = {}
