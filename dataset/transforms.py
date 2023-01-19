@@ -7,7 +7,10 @@ class ImageTransform:
             'train': transforms.Compose([
                 transforms.Resize((img_size, img_size)),
                 transforms.RandomHorizontalFlip(),
-                transforms.RandomVerticalFlip(),
+                # Add random noise
+                transforms.RandomApply(transforms=[transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1)], p=0.3),
+                transforms.RandomApply(transforms=[transforms.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))], p=0.3),
+                transforms.RandomPosterize(2),
                 transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ]),
