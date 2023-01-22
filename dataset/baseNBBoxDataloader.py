@@ -37,9 +37,17 @@ class VialNBBoxLoader(BaseVialLoader):
         self.TensorTransform = T.ToTensor()
 
         len_defect_cat = len(self.defect_cat)
-        for name, i in self.defect_cat.items: 
+        defect_cat = {}
+        for name, i in self.defect_cat.items():
+            defect_cat[name] = i 
+        for name, i in defect_cat.items(): 
             self.defect_cat[f'synthetic_{name}'] = i + len_defect_cat
-
+        
+        categories = {}
+        for name, i in self.categories.items():
+            categories[name] = i 
+        for name, i in categories.items(): 
+            self.categories[f'synthetic_{name}'] = i
 
         for i in tqdm(range(len(self.img_paths))):
             if 'Synthetic' in self.img_paths[i]['path']:
@@ -49,22 +57,25 @@ class VialNBBoxLoader(BaseVialLoader):
     def __getitem__(self, idx):
         defect_dict = self.img_paths[idx]
         
-        d_image = self.TensorTransform(Image.open(defect_dict['path']).convert('RGB'))
+        # d_image = self.TensorTransform(Image.open(defect_dict['path']).convert('RGB'))
+        d_image = self.transform(Image.open(defect_dict['path']).convert('RGB'), self.setting)
         
         label = torch.zeros((1, self.h, self.w))
         
         bbox_points = defect_dict['bbox']
         if bbox_points is not None:
-            label[ int(bbox_points[1]):int(bbox_points[1]+bbox_points[3]), int(bbox_points[0]):int(bbox_points[0]+bbox_points[2])] = 1
-        d_combined = torch.cat([d_image, label], dim=0)
+            label[:, int(bbox_points[1]):int(bbox_points[1]+bbox_points[3]), int(bbox_points[0]):int(bbox_points[0]+bbox_points[2])] = 1
+        
+        # d_combined = torch.cat([d_image, label], dim=0)
+        # d_combined = self.PilTransform(d_combined)
+        # d_combined = self.transform(d_combined, self.setting)
+        # d_image = d_combined[:3, :, :]
+        # d_label = d_combined[3:, :, :]
 
-        d_combined = self.PilTransform(d_combined)
 
-        d_combined = self.transform(d_combined, self.setting)
-
+        # d_image = self.transform(self.PilTransform(d_image), self.setting)
+        d_label = self.transform(self.PilTransform(label), self.setting)
         
         d_type = self.defect_cat[defect_dict['type']]
-        d_cat = None
-        d_image = d_combined[:3, :, :]
-        d_label = d_combined[3:, :, :]
+        d_cat = self.defect_cat[defect_dict['type']]
         return d_image, d_cat, d_type, d_label
