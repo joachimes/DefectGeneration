@@ -1,6 +1,6 @@
 state:
   mode: train
-  load: False
+  load: True
   version_hparams: [dataset_type, batch_size, latent_dim, n_embed]
   model_name: VQModel
   monitor: val_rec_loss

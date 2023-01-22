@@ -1,0 +1,425 @@
+test:
+  B:
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 894
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  CCD:
+    Real:
+      category: A3
+      hash:
+      - current_version
+      n_images: 2100
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+  CnC:
+    Real:
+      category: A1
+      hash:
+      - current_version
+      n_images: 960
+      split: test
+      versions:
+      - A
+      - B
+      - C
+  DIST:
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 493
+      split: test
+      versions:
+      - A
+      - B
+      - E
+  DPPST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 203
+      split: test
+      versions:
+      - A
+      - B
+  FCC:
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 1039
+      split: test
+      versions:
+      - A
+      - B
+      - C
+  FOST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 1431
+      split: test
+      versions:
+      - A
+      - B
+  GPST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 183
+      split: test
+      versions:
+      - A
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 21720
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  MESM:
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 114
+      split: test
+      versions:
+      - A
+  MSF:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 480
+      split: test
+      versions:
+      - A
+  MST:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 480
+      split: test
+      versions:
+      - A
+  PST:
+    Real:
+      category: G1
+      hash:
+      - current_version
+      n_images: 235
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  SSNPDNeck:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 260
+      split: test
+      versions:
+      - A
+      - C
+      - D
+train:
+  B:
+    Diffusion:
+      category: A2
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  CCD:
+    Diffusion:
+      category: A3
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  CnC:
+    Diffusion:
+      category: A1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  DIST:
+    Diffusion:
+      category: B2
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  DPPST:
+    Diffusion:
+      category: D1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  FCC:
+    Diffusion:
+      category: A2
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  FOST:
+    Diffusion:
+      category: D1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  GPST:
+    Diffusion:
+      category: D1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  Good:
+    Diffusion:
+      category: Good
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  MESM:
+    Diffusion:
+      category: B2
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  MSF:
+    Diffusion:
+      category: B1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  MST:
+    Diffusion:
+      category: B1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  PST:
+    Diffusion:
+      category: G1
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+  SSNPDNeck:
+    Diffusion:
+      category: C2
+      hash:
+      - Real_generative_5_256_4_19
+      n_images: 1000
+      split: train
+      versions: []
+val:
+  B:
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 225
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  CCD:
+    Real:
+      category: A3
+      hash:
+      - current_version
+      n_images: 450
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
+  CnC:
+    Real:
+      category: A1
+      hash:
+      - current_version
+      n_images: 240
+      split: val
+      versions:
+      - A
+      - B
+      - C
+  DIST:
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 89
+      split: val
+      versions:
+      - A
+      - B
+      - E
+  DPPST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 47
+      split: val
+      versions:
+      - A
+      - B
+  FCC:
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 267
+      split: val
+      versions:
+      - A
+      - B
+      - C
+  FOST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 372
+      split: val
+      versions:
+      - A
+      - B
+  GPST:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 38
+      split: val
+      versions:
+      - A
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 21840
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+  MESM:
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 38
+      split: val
+      versions:
+      - A
+  MSF:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 120
+      split: val
+      versions:
+      - A
+  MST:
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 90
+      split: val
+      versions:
+      - A
+  PST:
+    Real:
+      category: G1
+      hash:
+      - current_version
+      n_images: 24
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  SSNPDNeck:
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 34
+      split: val
+      versions:
+      - A
+      - C
+      - D

@@ -2,7 +2,7 @@ state:
   mode: train
   load: False
   # load_epoch: 14
-  version_hparams: [dataset_type, batch_size, img_size, channels]
+  version_hparams: [dataset_type, batch_size, channels, image_size]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
   gpu: [0]
@@ -23,10 +23,10 @@ model:
   num_timesteps_cond: 1
   log_every_t: 200
   timesteps: 1000
-  first_stage_key: image
+  first_stage_key: 0
   cond_stage_key: 2
   image_size: 32
-  channels: 4
+  channels: 3
   cond_stage_trainable: true
   conditioning_key: crossattn
   monitor: val/loss_epoch
@@ -34,24 +34,24 @@ model:
   first_stage_config:
     first_stage_model: VQModelInterface
     n_embed: 16384
-    latent_dim: 4
-    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_generative_9_4_16384_19\model_epoch=18_val_loss=0.000.ckpt
+    latent_dim: 3
+    cpkt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_Synthetic_8_3_16384_14\model_epoch=15_val_loss=0.000.ckpt
     AEcfg:
       double_z: False
-      z_channels: 4
+      z_channels: 3
       img_size: 256
       channels: 3
       out_ch: 3
       init_dim: 128
-      dim_mult: [1, 2, 2, 4]
+      dim_mult: [1, 2, 4, 4]
       num_res_blocks: 2
-      attn_resolutions: [32]
+      attn_resolutions: []
       resnet_block_groups: 8
     losscfg: identity
   unet_config:
     image_size: 32
-    in_channels: 4
-    out_channels: 4
+    in_channels: 3
+    out_channels: 3
     model_channels: 256
     attention_resolutions: [8, 4, 1]
     num_res_blocks: 2
@@ -70,11 +70,11 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 1
-  batch_size: 32
+  num_workers: 4
+  batch_size: 5
   img_size: 256
-  loader: VialNBBoxLoader
-  dataset_type: Real_generative
-  transform:
+  # loader: VialNBBoxLoader
+  dataset_type: Real_Synthetic
+  transform: 
 
       
