@@ -28,7 +28,7 @@ from models.vae_init import VAEInterface
 from models.ldm_utils.ddim import DDIMSampler
 from models.ldm_utils.util import make_beta_schedule, extract_into_tensor, noise_like,\
     log_txt_as_img, default, ismap, isimage, mean_flat, count_params
-from models.ldm_utils.helper_models import LitEma, ClassEmbedder, UNetModel
+from models.ldm_utils.helper_models import LitEma, ClassEmbedder, UNetModel, SpatialRescaler
 from models.train import LitTrainer
 
 
@@ -341,8 +341,8 @@ class DDPM(LitTrainer):
         return self.p_losses(x, t, *args, **kwargs)
 
     def get_input(self, batch, k):
-        imgs, _, img_class = batch
-        return imgs
+        output = batch[k]
+        return output
         # x = batch[k]
         # if len(x.shape) == 3:
         #     x = x[..., None]
@@ -532,7 +532,7 @@ class LatentDiffusion(DDPM):
         for param in self.first_stage_model.parameters():
             param.requires_grad = False
 
-    def instantiate_cond_stage(self, config):
+    def instantiate_cond_stage(self, config, spatial_config=None):
         if not self.cond_stage_trainable:
             if config == "__is_first_stage__":
                 print("Using first stage also as cond stage.")
@@ -552,6 +552,14 @@ class LatentDiffusion(DDPM):
             assert config != '__is_unconditional__'
             model = ClassEmbedder(**config) #instantiate_from_config(config)
             self.cond_stage_model = model
+        
+        self.spatial_cond_stage_model = None
+        if spatial_config is not None:
+            self.spatial_cond_stage_model = SpatialRescaler(**spatial_config)
+            self.spatial_cond_stage_model.eval()
+            self.spatial_cond_stage_model.train = disabled_train
+            for param in self.spatial_cond_stage_model.parameters():
+                param.requires_grad = False
 
     def _get_denoise_row_from_list(self, samples, desc='', force_no_decoder_quantization=False):
         denoise_row = []

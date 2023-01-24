@@ -24,6 +24,7 @@ def main(cfg: DictConfig) -> None:
             if 'num_' in category_attribute:
                 cfg.state.version_hparams.append(category_attribute)
     fill_none(cfg)
+    # batch = next(iter(dm.train_dataloader()))
 
     log_folder = 'tb_logs'
     model_name = f"{cfg.state.model_name}_CAM{cfg.dataset.camera}"
@@ -60,7 +61,7 @@ def main(cfg: DictConfig) -> None:
     )
     weight_path = None
     if cfg.state.load and len((model_dir := os.listdir(model_path))) > 0:
-        model_epoch = f"epoch={cfg.state.load_epoch}" if cfg.state.load_epoch else 'epoch='
+        model_epoch = f"epoch={cfg.state.load_epoch}" if 'load_epoch' in cfg.state else 'epoch='
         weight_file = [f_name for f_name in model_dir if model_epoch in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      

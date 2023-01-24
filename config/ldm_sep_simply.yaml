@@ -35,7 +35,7 @@ model:
     first_stage_model: VQModelInterface
     n_embed: 16384
     latent_dim: 3
-    cpkt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_Synthetic_8_3_16384_14\model_epoch=15_val_loss=0.000.ckpt
+    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_Synthetic_8_3_16384_14\model_epoch=15_val_loss=0.000.ckpt
     AEcfg:
       double_z: False
       z_channels: 3
@@ -70,10 +70,10 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
-  num_workers: 4
+  num_workers: 5
   batch_size: 5
   img_size: 256
-  # loader: VialNBBoxLoader
+  loader: VialNBBoxLoader
   dataset_type: Real_Synthetic
   transform: 
 
