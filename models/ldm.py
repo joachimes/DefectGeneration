@@ -457,6 +457,7 @@ class LatentDiffusion(DDPM):
                  conditioning_key=None,
                  scale_factor=1.0,
                  scale_by_std=False,
+                 spatial_config=None,
                  *args, **kwargs):
         self.num_timesteps_cond = default(num_timesteps_cond, 1)
         self.scale_by_std = scale_by_std
@@ -483,7 +484,7 @@ class LatentDiffusion(DDPM):
         else:
             self.register_buffer('scale_factor', torch.tensor(scale_factor))
         self.instantiate_first_stage(first_stage_config)
-        self.instantiate_cond_stage(cond_stage_config)
+        self.instantiate_cond_stage(cond_stage_config, spatial_config)
         self.cond_stage_forward = cond_stage_forward
         self.clip_denoised = False
         self.bbox_tokenizer = None  
@@ -584,12 +585,24 @@ class LatentDiffusion(DDPM):
 
     def get_learned_conditioning(self, c):
         if self.cond_stage_forward is None:
-            if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
-                c = self.cond_stage_model.encode(c)
-                if isinstance(c, DiagonalGaussianDistribution):
-                    c = c.mode()
+            if isinstance(c, dict):
+                c1 = c['c_concat']
+                c2 = c['c_crossattn']
+                if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
+                    c['c_crossattn'] = self.cond_stage_model.encode(c2)
+                else: 
+                    c['c_crossattn'] = self.cond_stage_model(c2)
+
+                if hasattr(self.spatial_cond_stage_model, 'encode') and callable(self.spatial_cond_stage_model.encode):
+                    c['c_concat'] = self.spatial_cond_stage_model.encode(c1)
+
             else:
-                c = self.cond_stage_model(c)
+                if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
+                    c = self.cond_stage_model.encode(c)
+                    if isinstance(c, DiagonalGaussianDistribution):
+                        c = c.mode()
+                else:
+                    c = self.cond_stage_model(c)
         else:
             assert hasattr(self.cond_stage_model, self.cond_stage_forward)
             c = getattr(self.cond_stage_model, self.cond_stage_forward)(c)
@@ -707,6 +720,10 @@ class LatentDiffusion(DDPM):
                 
                 xc = batch[cond_key]
 
+            elif isinstance(cond_key, dict):
+                c1 = super().get_input(batch, cond_key['c_concat'])
+                c2 = super().get_input(batch, cond_key['c_crossattn'])
+                xc = {'c_concat': c1, 'c_crossattn': c2}
             else:
                 xc = x
             if not self.cond_stage_trainable or force_c_encode:
@@ -962,7 +979,7 @@ class LatentDiffusion(DDPM):
             z_list = [z[:, :, :, :, i] for i in range(z.shape[-1])]
 
             if self.cond_stage_key in ["image", "LR_image", "segmentation",
-                                       'bbox_img'] and self.model.conditioning_key:  # todo check for completeness
+                                       'bbox_img', 0, 2,] and self.model.conditioning_key:  # todo check for completeness
                 c_key = next(iter(cond.keys()))  # get key
                 c = next(iter(cond.values()))  # get value
                 assert (len(c) == 1)  # todo extend to list with more than one elem
@@ -1298,8 +1315,8 @@ class LatentDiffusion(DDPM):
         
         if self.fixed_train_imgs == None:
             # concatenate multiple validation images from different batches 
-            self.fixed_train_imgs, _, self.t_xc, *_ = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
-            self.fixed_val_imgs, _, self.v_xc, *_ = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+            self.fixed_train_imgs, _, self.t_xc, *t_rest = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
+            self.fixed_val_imgs, _, self.v_xc, *v_rest = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
             self.log_batch_size = min(16, len(self.fixed_train_imgs))
             self.nrow = int(np.sqrt(self.log_batch_size))
             
@@ -1307,7 +1324,22 @@ class LatentDiffusion(DDPM):
             self.fixed_val_imgs = self.fixed_val_imgs[:self.log_batch_size]
             self.logger.experiment.add_hparams({'fixed_train_labels': self.t_xc[:self.log_batch_size], 'fixed_val_labels': self.v_xc[:self.log_batch_size]}, {})
             self.xc_combined = torch.cat([self.t_xc[:self.log_batch_size], self.v_xc[:self.log_batch_size]], dim=0) # Combine to make single diffusion pass
-            self.xc_combined = self.get_learned_conditioning(self.xc_combined.to(self.device))
+
+            self.train_mask_log = None
+            self.val_mask_log = None
+            if len(t_rest) == 1 and self.model.conditioning_key == 'hybrid':
+                self.train_mask_log = t_rest[0]
+                self.val_mask_log = v_rest[0]
+                self.comb_mask = torch.cat([t_rest[0][:self.log_batch_size], v_rest[0][:self.log_batch_size]], dim=0)
+                self.xc_combined = {'c_concat': self.comb_mask.to(self.device), 'c_crossattn': self.xc_combined.to(self.device)}
+                grid = make_grid((self.train_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
+                self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+                grid = make_grid((self.val_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
+                self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+            
+            else:
+                self.xc_combined = self.xc_combined.to(self.device)
+            self.xc_combined = self.get_learned_conditioning(self.xc_combined)
 
             grid = make_grid((self.fixed_train_imgs[:, :3] + 1) * 0.5, nrow=self.nrow)
             self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
