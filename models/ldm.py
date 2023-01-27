@@ -16,6 +16,7 @@ from einops import rearrange, repeat
 from contextlib import contextmanager
 from functools import partial
 from tqdm import tqdm
+from omegaconf import OmegaConf
 from torchvision.utils import make_grid
 from pytorch_lightning.utilities.distributed import rank_zero_only
 
@@ -589,12 +590,12 @@ class LatentDiffusion(DDPM):
                 c1 = c['c_concat']
                 c2 = c['c_crossattn']
                 if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
-                    c['c_crossattn'] = self.cond_stage_model.encode(c2)
+                    c['c_crossattn'] = [self.cond_stage_model.encode(c2)]
                 else: 
-                    c['c_crossattn'] = self.cond_stage_model(c2)
+                    c['c_crossattn'] = [self.cond_stage_model(c2)]
 
                 if hasattr(self.spatial_cond_stage_model, 'encode') and callable(self.spatial_cond_stage_model.encode):
-                    c['c_concat'] = self.spatial_cond_stage_model.encode(c1)
+                    c['c_concat'] = [self.spatial_cond_stage_model.encode(c1)]
 
             else:
                 if hasattr(self.cond_stage_model, 'encode') and callable(self.cond_stage_model.encode):
@@ -710,7 +711,11 @@ class LatentDiffusion(DDPM):
         if self.model.conditioning_key is not None:
             if cond_key is None:
                 cond_key = self.cond_stage_key
-            if cond_key != self.first_stage_key:
+            if OmegaConf.is_dict(cond_key):
+                c1 = super().get_input(batch, cond_key['c_concat'])
+                c2 = super().get_input(batch, cond_key['c_crossattn'])
+                xc = {'c_concat': c1, 'c_crossattn': c2}
+            elif cond_key != self.first_stage_key:
                 # if cond_key in ['caption', 'coordinates_bbox']:
                 #     xc = batch[cond_key]
                 # elif cond_key == 'class_label':
@@ -720,10 +725,6 @@ class LatentDiffusion(DDPM):
                 
                 xc = batch[cond_key]
 
-            elif isinstance(cond_key, dict):
-                c1 = super().get_input(batch, cond_key['c_concat'])
-                c2 = super().get_input(batch, cond_key['c_crossattn'])
-                xc = {'c_concat': c1, 'c_crossattn': c2}
             else:
                 xc = x
             if not self.cond_stage_trainable or force_c_encode:
@@ -1333,9 +1334,9 @@ class LatentDiffusion(DDPM):
                 self.comb_mask = torch.cat([t_rest[0][:self.log_batch_size], v_rest[0][:self.log_batch_size]], dim=0)
                 self.xc_combined = {'c_concat': self.comb_mask.to(self.device), 'c_crossattn': self.xc_combined.to(self.device)}
                 grid = make_grid((self.train_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
-                self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+                self.logger.experiment.add_image(f'sd_imgs/real_mask', grid, 0)
                 grid = make_grid((self.val_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
-                self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
+                self.logger.experiment.add_image(f'sd_imgs/val_mask', grid, 0)
             
             else:
                 self.xc_combined = self.xc_combined.to(self.device)

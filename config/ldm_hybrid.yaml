@@ -2,7 +2,7 @@ state:
   mode: train
   load: False
   # load_epoch: 14
-  version_hparams: [dataset_type, batch_size, channels, image_size, cond_stage_key]
+  version_hparams: [dataset_type, batch_size, channels, image_size, conditioning_key ]
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
   gpu: [0]
@@ -52,7 +52,7 @@ model:
     losscfg: identity
   unet_config:
     image_size: 32
-    in_channels: 3
+    in_channels: 4
     out_channels: 3
     model_channels: 256
     attention_resolutions: [8, 4, 1]
@@ -68,7 +68,7 @@ model:
     key: 2
     n_classes:
   spatial_config:
-    n_stages: 4
+    n_stages: 3
     multiplier: 0.5
     in_channels: 1
 
