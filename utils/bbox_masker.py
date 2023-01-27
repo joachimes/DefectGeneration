@@ -10,18 +10,19 @@ class GenerativeTransform:
     def __init__(self, img_size=256, mean=[0.5], std=[0.5] ):
         self.transform = {
             'train': T.Compose([
-                T.Resize((img_size,img_size)),
-                T.ToTensor(),
+                # T.Resize((img_size,img_size)),
+                T.RandomCrop((img_size, img_size)),
+                # T.ToTensor(),
                 T.Normalize(mean=mean, std=std)
             ]),
             'val': T.Compose([
                 T.Resize((img_size, img_size)),
-                T.ToTensor(),
+                # T.ToTensor(),
                 T.Normalize(mean=mean, std=std)
             ]),
             'test': T.Compose([
                 T.Resize((img_size, img_size)),
-                T.ToTensor(),
+                # T.ToTensor(),
                 T.Normalize(mean=mean, std=std)
             ])}
 
@@ -34,6 +35,7 @@ def load_image_and_mask(image_path, bbox_points):
     TensorTransform = T.ToTensor()
     
     image = Image.open(image_path)
+    
     d_image = TensorTransform(image)
     
     mask = torch.zeros((1, *d_image.shape[1:]))
@@ -42,14 +44,14 @@ def load_image_and_mask(image_path, bbox_points):
     
     
     
-    # d_combined = torch.cat([d_image, mask], dim=0)
+    d_combined = torch.cat([d_image, mask], dim=0)
     # d_combined = PilTransform(d_combined)
-    # d_combined = transform(d_combined)
-    # d_image = d_combined[:3, :, :]
-    # d_label = d_combined[3:, :, :]
+    d_combined = transform(d_combined)
+    d_image = d_combined[:3, :, :]
+    d_label = d_combined[3:, :, :]
 
-    d_image = transform(PilTransform(d_image))
-    d_label = transform(PilTransform(mask))
+    # d_image = transform(PilTransform(d_image))
+    # d_label = transform(PilTransform(mask))
 
    
     # image = np.array(image)
@@ -71,7 +73,7 @@ def load_image_and_mask(image_path, bbox_points):
     plt.imshow(PilTransform((d_image+1)*0.5))
     plt.title(f'recon image')
     plt.subplot(1, 4, 4)
-    plt.imshow(PilTransform((masked_image)))
+    plt.imshow(PilTransform(mask))
     plt.title(f'm_image')
     plt.show()
 

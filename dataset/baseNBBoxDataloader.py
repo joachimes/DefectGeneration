@@ -27,11 +27,29 @@ def get_bbox_info(image_path):
         return None
     return None
 
+
+def iterate_all_folders_and_get_bbox_info(root_dir, camera, setting):
+    bbox_info = {}
+    for root, dirs, files in tqdm(os.walk(root_dir)):
+        if f'CAM{camera}' not in root or f'{os.sep}{setting}' not in root:
+            continue
+        for file in files:
+            if file.endswith(".json"):
+                with open(f'{root}{os.sep}{file}', 'r') as f:
+                    data = json.load(f)
+                    for image in data['images']:
+                        for annotation in data['annotations']:
+                            if annotation['image_id'] == image['id']:
+                                bbox_info[f'{os.path.join(root, "images", image["file_name"])}'] = annotation['bbox']
+    return bbox_info
+
+
 class VialNBBoxLoader(BaseVialLoader):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-
+        self.bbox_dict = iterate_all_folders_and_get_bbox_info(kwargs['data_path'], kwargs['camera'], self.setting)
         img = Image.open(self.img_paths[0]['path'])
+        print(len(self.bbox_dict))
         self.w, self.h = img.size
         self.PilTransform = T.ToPILImage()
         self.TensorTransform = T.ToTensor()
@@ -52,7 +70,13 @@ class VialNBBoxLoader(BaseVialLoader):
         for i in tqdm(range(len(self.img_paths))):
             if 'Synthetic' in self.img_paths[i]['path']:
                 self.img_paths[i]['type'] = f"synthetic_{self.img_paths[i]['type']}"
-            self.img_paths[i]['bbox'] = get_bbox_info(self.img_paths[i]['path'])
+            try:
+                self.img_paths[i]['bbox'] = self.bbox_dict[self.img_paths[i]['path']]
+            except:
+                self.img_paths[i]['bbox'] = None
+            # self.img_paths[i]['bbox'] = self.bbox_dict[self.img_paths[i]['path']]
+            # self.img_paths[i]['bbox'] = get_bbox_info(self.img_paths[i]['path'])
+        print('done')
                 
     def __getitem__(self, idx):
         defect_dict = self.img_paths[idx]
