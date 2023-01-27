@@ -62,6 +62,8 @@ def main(cfg: DictConfig) -> None:
     weight_path = None
     if cfg.state.load and len((model_dir := os.listdir(model_path))) > 0:
         model_epoch = f"epoch={cfg.state.load_epoch}" if 'load_epoch' in cfg.state else 'epoch='
+        if 'load_epoch' in cfg.state and cfg.state.load_epoch == 'last':
+            model_epoch = cfg.state.load_epoch
         weight_file = [f_name for f_name in model_dir if model_epoch in f_name][-1]
         weight_path = osp.join(model_path, weight_file) 
      
