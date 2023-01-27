@@ -59,19 +59,19 @@ class CropTransform:
                 # transforms.Resize((img_size,img_size)),
                 # add random crop
                 transforms.RandomCrop(img_size),
-                transforms.ToTensor(),
+                # transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ]),
             'val': transforms.Compose([
                 transforms.RandomCrop(img_size),
                 # transforms.Resize((img_size, img_size)),
-                transforms.ToTensor(),
+                # transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ]),
             'test': transforms.Compose([
                 transforms.RandomCrop(img_size),
                 # transforms.Resize((img_size, img_size)),
-                transforms.ToTensor(),
+                # transforms.ToTensor(),
                 transforms.Normalize(mean=mean, std=std)
             ])}
 
