@@ -55,13 +55,17 @@ class VialNBBoxLoader(BaseVialLoader):
         self.w, self.h = img.size
         self.PilTransform = T.ToPILImage()
         self.TensorTransform = T.ToTensor()
-
-        len_defect_cat = len(self.defect_cat)
-        defect_cat = {}
-        for name, i in self.defect_cat.items():
-            defect_cat[name] = i 
-        for name, i in defect_cat.items(): 
-            self.defect_cat[f'synthetic_{name}'] = i + len_defect_cat
+        keep_classes_together = False
+        if 'separate_classes' in kwargs and kwargs['separate_classes'] == False:
+            print("Keeping all classes together")
+            keep_classes_together = True
+        else:
+            len_defect_cat = len(self.defect_cat)
+            defect_cat = {}
+            for name, i in self.defect_cat.items():
+                defect_cat[name] = i 
+            for name, i in defect_cat.items(): 
+                self.defect_cat[f'synthetic_{name}'] = i + len_defect_cat
         
         categories = {}
         for name, i in self.categories.items():
@@ -70,13 +74,12 @@ class VialNBBoxLoader(BaseVialLoader):
             self.categories[f'synthetic_{name}'] = i
 
         for i in tqdm(range(len(self.img_paths))):
-            if 'Synthetic' in self.img_paths[i]['path']:
+            if not keep_classes_together and 'Synthetic' in self.img_paths[i]['path']:
                 self.img_paths[i]['type'] = f"synthetic_{self.img_paths[i]['type']}"
             try:
                 self.img_paths[i]['bbox'] = self.bbox_dict[self.img_paths[i]['path']]
             except:
                 self.img_paths[i]['bbox'] = None
-            # self.img_paths[i]['bbox'] = self.bbox_dict[self.img_paths[i]['path']]
             # self.img_paths[i]['bbox'] = get_bbox_info(self.img_paths[i]['path'])
         print('done')
                 
