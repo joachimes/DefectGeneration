@@ -79,56 +79,49 @@ def make_batch(image, device):
     return batch
 
 
-def sample(cfg, model, defect_info, model_version, num_images=100, batch_size=1, steps=50, eta=0., scale=1.0, strength=0.8):
+def sample(cfg, model, defect_info, model_version, num_images=5, batch_size=1, steps=50, n_row=2):
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
-    # indir = f'/nn-seidenader-gentofte/TJSD/VisData/Real/CAM{cfg.dataset.camera}/Good/'
-    outdir = f'/nn-seidenader-gentofte/TJSD/VisData/synth2real/CAM{cfg.dataset.camera}'
+    indir = f'/nn-seidenader-gentofte/TJSD/VisData/Real/CAM{cfg.dataset.camera}/Good/'
+    images = glob(osp.join(indir, '**', '**', '**', '**', '*'))
+    images = np.random.choice(images, num_images, replace=False)
+    outdir = f'../img/{cfg.state.model_name}'
+    outdir = f'/nn-seidenader-gentofte/TJSD/VisData/diffusion/CAM{cfg.dataset.camera}'
     sampler = DDIMSampler(model)
-    sampler.make_schedule(ddim_num_steps=steps, ddim_eta=eta, verbose=False)
+    sampler.ddpm_num_timesteps = steps
     with torch.no_grad():
         with model.ema_scope():
             for defect_name in defect_info:
-                defect_num = defect_info['Good']
-                indir = f'/nn-seidenader-gentofte/TJSD/VisData/Synthetic/CAM{cfg.dataset.camera}/{defect_name}/'
-                images = glob(osp.join(indir, '**', '**', 'images', '*'))
-                images = np.random.choice(images, num_images, replace=False)
-                batch = model.get_learned_conditioning(torch.tensor([defect_num] * batch_size).to(device))
+                defect_num = defect_info[defect_name]
+                batch = model.get_learned_conditioning(torch.tensor([defect_num for _ in range(batch_size)]).to(device))
                 outpath = osp.join(outdir, defect_name, model_version, 'train', 'images')
                 os.makedirs(outpath, exist_ok=True)
                 
                 for i, image in tqdm(enumerate(images)):
-                    uc = None
-                    # if scale != 1.0:
-                    #     uc = model.get_learned_conditioning(batch_size * [""])
                     img_batch = make_batch(image, device=device)
-                    # shape = (cfg.model.channels, cfg.model.image_size, cfg.model.image_size)
+                    shape = (cfg.model.channels, cfg.model.image_size, cfg.model.image_size)
                     
                     x0 = model.first_stage_model.encode(img_batch["image"])
-                    init_latent = model.get_first_stage_encoding(x0)
-                    # linearly interpolate between 0 and 1
-                    for t in np.linspace(0, 0.9, 100):
-                        t_enc = int(t * steps)
+                    for step in range(1, steps):
+                        # encode masked image and concat downsampled mask
+                        n_row = min(x0.shape[0], n_row)
+                        t = repeat(torch.tensor([step]), '1 -> b', b=n_row)
+                        t = t.to(device).long()
+                        noise = torch.randn_like(x0)
+                        x_T = model.q_sample(x_start=x0, t=t, noise=noise)
+                        
+                        samples_ddim, _ = sampler.sample(S=step, batch_size=batch_size
+                                                        , shape=shape, conditioning=batch
+                                                        , verbose=False, x_T=x_T)
 
-                        # encode (scaled latent)
-                        z_enc = sampler.stochastic_encode(init_latent, torch.tensor([t_enc]*batch_size).to(device))
-                        # decode it
-                        samples = sampler.decode(z_enc, batch, t_enc, unconditional_guidance_scale=scale,
-                                                    unconditional_conditioning=uc,)
-
-
-                        x_samples_ddim = model.decode_first_stage(samples)
+                        x_samples_ddim = model.decode_first_stage(samples_ddim)
 
                         predicted_image = torch.clamp((x_samples_ddim+1.0)/2.0,
                                                     min=0.0, max=1.0)
 
                         
                         pred_img = predicted_image.cpu().numpy().transpose(0,2,3,1)[0]*255
-                        # limit number of digits in float t
-                        t = float(f'{t:.2f}')
-                        Image.fromarray(pred_img.astype(np.uint8)).save(osp.join(outpath, f'{i}_step-{steps}_strength-{t:.4f}.jpg'))
-                        if t > 0.3:
-                            break
+                        Image.fromarray(pred_img.astype(np.uint8)).save(osp.join(outpath, f'{i}_step-{step}of-{steps}.jpg'))
                     image = torch.clamp((img_batch["image"]+1.0)/2.0,
                                         min=0.0, max=1.0)
                     img = image.cpu().numpy().transpose(0,2,3,1)[0]*255
