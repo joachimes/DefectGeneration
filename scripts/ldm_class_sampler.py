@@ -83,7 +83,8 @@ def sample(cfg, model, defect_info, model_version, num_images=1000, batch_size=4
                     shape = (cfg.model.channels, cfg.model.image_size, cfg.model.image_size)
                     samples, _ = sampler.sample(S=steps, batch_size=batch_size, shape=shape, conditioning=batch, verbose=False)
                     samples = model.decode_first_stage(samples)
-                    samples = (samples.cpu().numpy().transpose(0,2,3,1)+1)*255 * 0.5
+                    samples = torch.clamp((samples+1.0)/2.0,min=0.0, max=1.0)
+                    samples = samples.cpu().numpy().transpose(0,2,3,1) * 255
                     for j in range(i, i+batch_size):
                         Image.fromarray(samples[j%batch_size].astype(np.uint8)).save(osp.join(outpath, f'{j}.jpg'))
 
