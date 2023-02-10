@@ -257,10 +257,14 @@ train:
       category: Good
       hash:
       - current_version
-      n_images: 31980
+      n_images: 171870
       split: train
       versions:
       - A
+      - B
+      - C
+      - D
+      - E
   MESM:
     Real:
       category: B2
