@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torchvision.utils import make_grid
 from models.mixNMatch_utils.train_first_stage import define_optimizers, load_network
 from models.mixNMatch_utils.utils import copy_G_params, CrossEntropy, cal_gradient_penalty, child_to_parent
 from models.train import LitTrainer
@@ -30,7 +31,68 @@ class MixNMatch(LitTrainer):
 
         self.automatic_optimization = False
 
+        self.fixed_train_imgs = None
         
+    @torch.no_grad()
+    def log_samples(self):
+
+        if self.fixed_train_imgs == None:
+            # concatenate multiple validation images from different batches 
+            
+            batch = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
+            fixed_train_real_img126, self.fixed_train_imgs, fixed_train_real_z, fixed_train_real_b, fixed_train_real_p, fixed_train_real_c = self.prepare_epoch_data(batch)
+            while len(self.fixed_train_imgs) < 16:
+                batch = next(iter(self.trainer._data_connector._train_dataloader_source.dataloader()))
+                fixed_real_img126, fixed_real_img, fixed_real_z, fixed_real_b, fixed_real_p, fixed_real_c = self.prepare_epoch_data(batch)
+                self.fixed_train_imgs = torch.cat([self.fixed_train_imgs, fixed_real_img], dim=0)
+                fixed_train_real_img126 = torch.cat([fixed_train_real_img126, fixed_real_img126], dim=0)
+                fixed_train_real_z = torch.cat([fixed_train_real_z, fixed_real_z], dim=0)
+                fixed_train_real_b = torch.cat([fixed_train_real_b, fixed_real_b], dim=0)
+                fixed_train_real_p = torch.cat([fixed_train_real_p, fixed_real_p], dim=0)
+                fixed_train_real_c = torch.cat([fixed_train_real_c, fixed_real_c], dim=0)
+                
+            batch = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+            fixed_val_real_img126, fixed_val_imgs, fixed_val_real_z, fixed_val_real_b, fixed_val_real_p, fixed_val_real_c = self.prepare_epoch_data(batch)
+            while len(fixed_val_imgs) < 16:
+                batch = next(iter(self.trainer._data_connector._val_dataloader_source.dataloader()))
+                fixed_real_img126, fixed_real_img, fixed_real_z, fixed_real_b, fixed_real_p, fixed_real_c = self.prepare_epoch_data(batch)
+                fixed_val_imgs = torch.cat([fixed_val_imgs, fixed_real_img], dim=0)
+                fixed_val_real_img126 = torch.cat([fixed_val_real_img126, fixed_real_img126], dim=0)
+                fixed_val_real_z = torch.cat([fixed_val_real_z, fixed_real_z], dim=0)
+                fixed_val_real_b = torch.cat([fixed_val_real_b, fixed_real_b], dim=0)
+                fixed_val_real_p = torch.cat([fixed_val_real_p, fixed_real_p], dim=0)
+                fixed_val_real_c = torch.cat([fixed_val_real_c, fixed_real_c], dim=0)
+                
+            grid = make_grid((self.fixed_train_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'mmm/real_train', grid, 0)
+            
+            
+            grid = make_grid((fixed_val_imgs + 1) * 0.5, nrow=4)
+            self.logger.experiment.add_image(f'mmm/real_val', grid, 0)
+
+            self.combined_z = torch.cat([fixed_train_real_z[:16], fixed_val_real_z[:16]], dim=0)
+            self.combined_b = torch.cat([fixed_train_real_b[:16], fixed_val_real_b[:16]], dim=0)
+            self.combined_p = torch.cat([fixed_train_real_p[:16], fixed_val_real_p[:16]], dim=0)
+            self.combined_c = torch.cat([fixed_train_real_c[:16], fixed_val_real_c[:16]], dim=0)
+
+        # Sample 
+        # fake_z2, _, _, _ = self.encoder( self.combined_z.to(self.device), 'softmax' )
+        # fake_z1, fake_b, _, _ = self.encoder( self.combined_b.to(self.device), 'softmax' )
+        # _, _, fake_p, _ = self.encoder( self.combined_p.to(self.device), 'softmax' )
+        # _, _, _, fake_c = self.encoder( self.combined_c.to(self.device), 'softmax' )    
+        
+        # fake_imgs, _, _, _ = self.netG(fake_z1, fake_z2, fake_c, fake_p,  fake_b, 'code' )
+        fake_imgs, _, _, _ = self.netG(self.combined_z, self.combined_z, self.combined_c, self.combined_p,  self.combined_b, 'code' )
+
+        
+        grid = make_grid((fake_imgs[:16] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_train', grid, self.global_step)
+
+        grid = make_grid((fake_imgs[:16] + 1) * 0.5, nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_val', grid, self.global_step)
+
+
+            
 
     def _common_step(self, batch, batch_idx, optimizer_idx=None):
         # batch_imgs, *_ = batch
@@ -55,6 +117,9 @@ class MixNMatch(LitTrainer):
         GE_loss = self.train_EG(ge_opt)
         # for avg_p, p in zip( self.avg_param_G, self.netG.parameters() ):
         #     avg_p.mul_(0.999).add_(p.data, alpha=0.001)
+        if (self.global_step < 1000 and self.global_step % 100 == 0) or self.global_step % 2000 == 0:
+            print(f'logging samples at step {self.global_step}')
+            self.log_samples()
 
         return {f'GE_loss': GE_loss, f'BD_loss': bd_loss, f'd_loss_0': d_loss_0, f'd_loss_2': d_loss_2}
         
@@ -74,6 +139,7 @@ class MixNMatch(LitTrainer):
         D0_avg_loss = torch.stack([x['d_loss_0'] for x in outputs]).mean()
         D2_avg_loss = torch.stack([x['d_loss_2'] for x in outputs]).mean()
         loss_dict = {f'val_GE_loss': GE_avg_loss, f'val_BD_loss': BD_avg_loss, f'val_D0_loss': D0_avg_loss, f'val_D2_loss': D2_avg_loss}
+        self.log_samples()
         self.log_dict(loss_dict, logger=True)
         self.log('val_loss', GE_avg_loss + D0_avg_loss + D2_avg_loss + BD_avg_loss, sync_dist=True)
         
