@@ -162,19 +162,19 @@ def preprocess_image(im, shape=299):
     Args:
         im: np.array, shape: (H, W, 3), dtype: float32 between 0-1 or np.uint8
     Return:
-        im: torch.tensor, shape: (3, 299, 299), dtype: torch.float32 between 0-1
+        im: torch.tensor, shape: (3, shape, shape), dtype: torch.float32 between 0-1
     """
     assert im.shape[2] == 3
     assert len(im.shape) == 3
     if im.dtype == np.uint8:
         im = im.astype(np.float32) / 255
-    im = cv2.resize(im, (299, 299))
+    im = cv2.resize(im, (shape, shape))
     im = np.rollaxis(im, axis=2)
     im = torch.from_numpy(im)
     assert im.max() <= 1.0
     assert im.min() >= 0.0
     assert im.dtype == torch.float32
-    assert im.shape == (3, 299, 299)
+    assert im.shape == (3, shape, shape)
 
     return im
 
@@ -203,10 +203,11 @@ def preprocess_images(images, use_multiprocessing, shape=299):
     assert final_images.max() <= 1.0
     assert final_images.min() >= 0.0
     assert final_images.dtype == torch.float32
+    del images
     return final_images
 
 
-def calculate_fid(images1, images2, use_multiprocessing, batch_size):
+def calculate_fid(path1, path2, use_multiprocessing, batch_size, max_images=10_000, total_max_images=None):
     """ Calculate FID between images1 and images2
     Args:
         images1: np.array, shape: (N, H, W, 3), dtype: np.float32 between 0-1 or np.uint8
@@ -216,15 +217,26 @@ def calculate_fid(images1, images2, use_multiprocessing, batch_size):
     Returns:
         FID (scalar)
     """
+    print("Loading first path...")
+    images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
+    print("Preprocessing first path...")
     images1 = preprocess_images(images1, use_multiprocessing)
-    images2 = preprocess_images(images2, use_multiprocessing)
+    print("Calculating activation statistics for first path...")
     mu1, sigma1 = calculate_activation_statistics(images1, batch_size)
+    del images1
+    print("Loading second path...")
+    images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
+    print("Preprocessing second path...")
+    images2 = preprocess_images(images2, use_multiprocessing)
+    print("Calculating activation statistics for second path...")
     mu2, sigma2 = calculate_activation_statistics(images2, batch_size)
+    del images2
+    print("Calculating FID...")
     fid = calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
     return fid
 
 
-def load_images(path):
+def load_images(paths, max_images=10_000, total_max_images=None):
     """ Loads all .png or .jpg images from a given path
     Warnings: Expects all images to be of same dtype and shape.
     Args:
@@ -233,13 +245,21 @@ def load_images(path):
         final_images: np.array of image dtype and shape.
     """
     image_paths = []
-    image_extensions = ["png", "jpg"]
-    for ext in image_extensions:
-        print("Looking for images in", os.path.join(path, "*.{}".format(ext)))
-        for impath in glob.glob(os.path.join(path, "*.{}".format(ext))):
-            image_paths.append(impath)
+    image_extensions = ["png", "jpg", 'jpeg']
+    if isinstance(paths, str):
+        paths = [paths]
+    for path in paths:
+        for ext in image_extensions:
+            print("Looking for images in", os.path.join(path, "*.{}".format(ext)))
+            for idx, impath in enumerate(glob.glob(os.path.join(path, "*.{}".format(ext)))):
+                image_paths.append(impath)
+                if idx >= max_images:
+                    break
+    if isinstance(total_max_images, int) and len(image_paths) > total_max_images:
+        #sample random set equal to total_max_images using numpy
+        image_paths = np.random.choice(image_paths, total_max_images, replace=False)
     first_image = cv2.imread(image_paths[0])
-    W, H = first_image.shape[:2]
+    H, W = first_image.shape[:2]
     image_paths.sort()
     image_paths = image_paths
     final_images = np.zeros((len(image_paths), H, W, 3), dtype=first_image.dtype)
@@ -249,6 +269,21 @@ def load_images(path):
         assert im.dtype == final_images.dtype
         final_images[idx] = im
     return final_images
+
+
+def fid_calculator(path1, path2, batch_size, use_multiprocessing=False, max_images=10_000, total_max_images=None):
+    """ Calculates FID between images in path1 and path2
+    Args:
+        path1: relative path to directory containing images
+        path2: relative path to directory containing images
+        batch size: batch size used for inception network
+        use_multiprocessing: If multiprocessing should be used to pre-process the images
+    Returns:
+        FID (scalar)
+    """
+
+    fid = calculate_fid(path1, path2, use_multiprocessing, batch_size, max_images=max_images, total_max_images=total_max_images)
+    return fid
 
 
 if __name__ == "__main__":
@@ -270,7 +305,5 @@ if __name__ == "__main__":
     assert options.path1 is not None, "--path1 is an required option"
     assert options.path2 is not None, "--path2 is an required option"
     assert options.batch_size is not None, "--batch_size is an required option"
-    images1 = load_images(options.path1)
-    images2 = load_images(options.path2)
-    fid_value = calculate_fid(images1, images2, options.use_multiprocessing, options.batch_size)
+    fid_value = calculate_fid(options.path1, options.path2, options.use_multiprocessing, options.batch_size)
     print(fid_value)
