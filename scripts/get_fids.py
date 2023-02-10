@@ -6,8 +6,10 @@ import numpy as np
 
 import sys
 sys.path.append('../')
+sys.path.append('../utils/')
 
 from utils.fid import fid_calculator
+from utils.prdc import compute_prdc
 from glob import glob
 from tqdm import tqdm
 
@@ -30,8 +32,10 @@ def get_fids(base_path, sources):
         print(source1_paths[:3])
         
         print(source2_paths[:3])
-        ret_fid = fid_calculator(source1_paths, source2_paths, 32, max_images=5000, total_max_images=50000)
-        fids.append(ret_fid)
+        ret_prdc = compute_prdc(source1_paths, source2_paths, use_multiprocessing=False, batch_size=32, nearest_k=5, max_images=5000, total_max_images=50000)
+        fids.append(ret_prdc)
+        # ret_fid = fid_calculator(source1_paths, source2_paths, 32, max_images=5000, total_max_images=50000)
+        # fids.append(ret_fid)
     print(fids)
 
 def main():
