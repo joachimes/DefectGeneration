@@ -41,6 +41,9 @@ def get_fids(base_path, sources):
 def main():
     base_path = '/nn-seidenader-gentofte/TJSD/VisData/'
     sources = [('Synthetic/CAM2/', 'Real/CAM2/'), ('Real/CAM2/', 'Real_generative_5_256_4_19'), ('Real/CAM2/', 'Real/CAM2/Good/'), ]
+    # [{'precision': 0.018524773311855335, 'recall': 0.00010203561042803938, 'density': 0.0037517212710124976, 'coverage': 0.00020407122085607876}
+    # , {'precision': 0.09052631578947369, 'recall': 0.08423185845306451, 'density': 0.02571578947368421, 'coverage': 0.0287874457637247}
+    # , {'precision': 0.5688062387522496, 'recall': 0.05910708988430733, 'density': 0.38346730653869227, 'coverage': 0.1805843963215663}]
     get_fids(base_path, sources)
 
 if __name__ == "__main__":
