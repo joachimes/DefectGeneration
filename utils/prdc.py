@@ -10,7 +10,7 @@ import sklearn.metrics
 from torch import nn
 from torchvision.models import vgg16
 
-from fid import preprocess_images, load_images, to_cuda, get_activations
+from utils.fid import to_cuda, load_preprocess_get_activations_images, calculate_activation_statistics, calculate_frechet_distance
 
 __all__ = ['compute_prdc']
 
@@ -60,6 +60,9 @@ def get_features(images, batch_size):
         activations = activations.detach().cpu().numpy()
         assert activations.shape == (ims.shape[0], 4096), "Expexted output shape to be: {}, but was: {}".format((ims.shape[0], 4096), activations.shape)
         vgg16_features[start_idx:end_idx, :] = activations
+    # Remove vgg16 from memory
+    del vgg16
+    
     return vgg16_features
 
 
@@ -74,7 +77,7 @@ def compute_pairwise_distance(data_x, data_y=None):
     if data_y is None:
         data_y = data_x
     dists = sklearn.metrics.pairwise_distances(
-        data_x, data_y, metric='euclidean', n_jobs=8)
+        data_x, data_y, metric='euclidean')
     return dists
 
 
@@ -116,27 +119,33 @@ def compute_prdc(path1, path2, use_multiprocessing, nearest_k, batch_size, max_i
     Returns:
         dict of precision, recall, density, and coverage.
     """
-    print('Loading path1 images...')
-    images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
-    print('Preprocessing path1 images...')
-    images1 = preprocess_images(images1, use_multiprocessing=use_multiprocessing, shape=shape)
-    print('Computing path1 features...')
-    real_features = get_activations(images1, batch_size)
+    # print('Loading path1 images...')
+    # images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
+    # print('Preprocessing path1 images...')
+    # images1 = preprocess_images(images1, use_multiprocessing=use_multiprocessing, shape=shape)
+    # print('Computing path1 features...')
+    # real_features = get_activations(images1, batch_size)
+
+    real_features = load_preprocess_get_activations_images(path1, max_images=max_images, total_max_images=total_max_images, use_multiprocessing=use_multiprocessing, shape=shape, batch_size=batch_size)
 
     # real_features = get_features(images1, batch_size)
-    del images1
+    # del images1
+
+    mu1, sigma1 = calculate_activation_statistics(real_features)
 
 
 
-
-    print('Loading path2 images...')
-    images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
-    print('Preprocessing path2 images...')
-    images2 = preprocess_images(images2, use_multiprocessing=use_multiprocessing, shape=shape)
-    print('Computing path2 features...')
-    fake_features = get_activations(images2, batch_size)
+    # print('Loading path2 images...')
+    # images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
+    # print('Preprocessing path2 images...')
+    # images2 = preprocess_images(images2, use_multiprocessing=use_multiprocessing, shape=shape)
+    # print('Computing path2 features...')
+    # fake_features = get_activations(images2, batch_size)
+    fake_features = load_preprocess_get_activations_images(path2, max_images=max_images, total_max_images=total_max_images, use_multiprocessing=use_multiprocessing, shape=shape, batch_size=batch_size)
     # fake_features = get_features(images2, batch_size)
-    del images2
+    # del images2
+    mu2, sigma2 = calculate_activation_statistics(fake_features)
+    fid = calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
 
     print('Num real: {}'
             .format(real_features.shape[0]))
@@ -151,6 +160,7 @@ def compute_prdc(path1, path2, use_multiprocessing, nearest_k, batch_size, max_i
     print('Computing nearest neighbour distances...')
     fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
         fake_features, nearest_k)
+    print('Computing pairwise distances...')
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
 
@@ -175,7 +185,7 @@ def compute_prdc(path1, path2, use_multiprocessing, nearest_k, batch_size, max_i
     ).mean()
 
     return dict(precision=precision, recall=recall,
-                density=density, coverage=coverage)
+                density=density, coverage=coverage, fid=fid)
 
 
 

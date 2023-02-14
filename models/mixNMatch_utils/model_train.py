@@ -91,7 +91,10 @@ class BACKGROUND_STAGE(nn.Module):
         self.ngf = ngf        
         in_dim = z_dim + fine_grained_categories 
 
-        self.fc = nn.Sequential( nn.Linear(in_dim, ngf*4*4 * 2, bias=False), nn.BatchNorm1d(ngf*4*4 * 2), GLU())
+        # self.fc = nn.Sequential( nn.Linear(in_dim, ngf*4*4 * 2, bias=False), nn.BatchNorm1d(ngf*4*4 * 2), GLU())
+        self.fc1 = nn.Linear(in_dim, ngf*4*4 * 2, bias=False)
+        self.fc2 = nn.BatchNorm1d(ngf*4*4 * 2)
+        self.fc3 = GLU()
         # 1024*4*4
         self.upsample1 = upBlock(ngf, ngf // 2 )   
         # 512*8*8
@@ -106,7 +109,11 @@ class BACKGROUND_STAGE(nn.Module):
 
     def forward(self, z_input, input):
         in_code = torch.cat([z_input, input], dim=1)
-        out_code = self.fc(in_code).view(-1, self.ngf, 4, 4) 
+        out_code = self.fc1(in_code)
+        out_code = self.fc2(out_code)
+        out_code = self.fc3(out_code)
+        out_code = out_code.view(-1, self.ngf, 4, 4)
+        # out_code = self.fc(in_code).view(-1, self.ngf, 4, 4) 
         out_code = self.upsample1(out_code) 
         out_code = self.upsample2(out_code) 
         out_code = self.upsample3(out_code)

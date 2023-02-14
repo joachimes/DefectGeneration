@@ -17,10 +17,10 @@ dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 6
   weighted_sampling: 1
-  num_workers: 8
+  num_workers: 4
   batch_size: 64
   img_size: 224
-  limit_real_amount: 0.9
+  limit_real_amount: None
   mean: [0.485, 0.456, 0.406]
   std: [0.229, 0.224, 0.225]
   dataset_type: Real_Synthetic

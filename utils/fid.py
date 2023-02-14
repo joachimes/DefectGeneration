@@ -7,6 +7,7 @@ import multiprocessing
 import numpy as np
 import glob
 import os
+from tqdm import tqdm
 from scipy import linalg
 
 
@@ -85,11 +86,15 @@ def get_activations(images, batch_size):
         activations = activations.detach().cpu().numpy()
         assert activations.shape == (ims.shape[0], 2048), "Expexted output shape to be: {}, but was: {}".format((ims.shape[0], 2048), activations.shape)
         inception_activations[start_idx:end_idx, :] = activations
+    # delete inception network to free memory
+    del inception_network
+    torch.cuda.empty_cache()
+    
     return inception_activations
 
 
 
-def calculate_activation_statistics(images, batch_size):
+def calculate_activation_statistics(act):
     """Calculates the statistics used by FID
     Args:
         images: torch.tensor, shape: (N, 3, H, W), dtype: torch.float32 in range 0 - 1
@@ -99,7 +104,7 @@ def calculate_activation_statistics(images, batch_size):
         sigma:  covariance matrix over all activations from the last pool layer 
                 of the inception model.
     """
-    act = get_activations(images, batch_size)
+    # act = get_activations(images, batch_size)
     mu = np.mean(act, axis=0)
     sigma = np.cov(act, rowvar=False)
     return mu, sigma
@@ -206,6 +211,76 @@ def preprocess_images(images, use_multiprocessing, shape=299):
     del images
     return final_images
 
+def load_preprocess_get_activations_images(paths, max_images=10_000, total_max_images=None, batch_size=32, use_multiprocessing=True, shape=299):
+    """ Low memory usage version for loading images and getting inception activations
+    Args:
+        paths: str or list of str, paths to images
+        max_images: int, maximum number of images to load from each path
+        total_max_images: int, maximum number of images to load from all paths
+        batch_size: int, batch size for inception activations
+        use_multiprocessing: bool, if multiprocessing should be used to pre-process the images
+        shape: int, shape of the images to be loaded
+
+    Returns:
+        inception_activations: np.array of image dtype and shape.
+    """
+    image_paths = []
+    image_extensions = ["png", "jpg", 'jpeg']
+    if isinstance(paths, str):
+        paths = [paths]
+    for path in paths:
+        print("Looking for images in",path)
+        for ext in image_extensions:
+            for idx, impath in enumerate(glob.glob(os.path.join(path, "*.{}".format(ext)))):
+                image_paths.append(impath)
+                if idx >= max_images:
+                    break
+    if isinstance(total_max_images, int) and len(image_paths) > total_max_images:
+        image_paths = np.random.choice(image_paths, total_max_images, replace=False)
+    
+    first_image = cv2.imread(image_paths[0])
+    H, W = first_image.shape[:2]
+    image_paths.sort()
+
+    num_images = len(image_paths)
+    inception_network = PartialInceptionNetwork()
+    inception_network = to_cuda(inception_network)
+    inception_network.eval()
+
+    n_batches = int(np.ceil(num_images  / batch_size))
+    inception_activations = np.zeros((num_images, 2048), dtype=np.float32)
+    batch_images = np.zeros((batch_size, H, W, 3), dtype=first_image.dtype)
+
+    for batch_idx in tqdm(range(n_batches)):
+        start_idx = batch_size * batch_idx
+        end_idx = batch_size * (batch_idx + 1)
+        for idx, impath in enumerate(image_paths[start_idx:end_idx]):
+            image = cv2.imread(impath)
+            image = image[:, :, ::-1] # Convert from BGR to RGB
+            batch_images[idx % batch_size] = image
+            
+        torch_images = torch.stack([preprocess_image(im, shape) for im in batch_images], dim=0)
+        assert torch_images.shape == (batch_images.shape[0], 3, shape, shape)
+        assert torch_images.max() <= 1.0
+        assert torch_images.min() >= 0.0
+        assert torch_images.dtype == torch.float32
+
+        assert torch_images.shape[1:] == (3, 299, 299), "Expected input shape to be: (N,3,299,299)" +\
+                                                ", but got {}".format(torch_images.shape)
+
+        ims = to_cuda(torch_images)
+        activations = inception_network(ims)
+        activations = activations.detach().cpu().numpy()
+        assert activations.shape == (ims.shape[0], 2048), "Expexted output shape to be: {}, but was: {}".format((ims.shape[0], 2048), activations.shape)
+        clamp_value = len(inception_activations[start_idx:end_idx])
+
+        inception_activations[start_idx:end_idx, :] = activations[:clamp_value]
+
+    del inception_network
+    torch.cuda.empty_cache()
+        
+    return inception_activations
+
 
 def calculate_fid(path1, path2, use_multiprocessing, batch_size, max_images=10_000, total_max_images=None):
     """ Calculate FID between images1 and images2
@@ -217,20 +292,24 @@ def calculate_fid(path1, path2, use_multiprocessing, batch_size, max_images=10_0
     Returns:
         FID (scalar)
     """
-    print("Loading first path...")
-    images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
-    print("Preprocessing first path...")
-    images1 = preprocess_images(images1, use_multiprocessing)
-    print("Calculating activation statistics for first path...")
-    mu1, sigma1 = calculate_activation_statistics(images1, batch_size)
-    del images1
-    print("Loading second path...")
-    images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
-    print("Preprocessing second path...")
-    images2 = preprocess_images(images2, use_multiprocessing)
-    print("Calculating activation statistics for second path...")
-    mu2, sigma2 = calculate_activation_statistics(images2, batch_size)
-    del images2
+    # print("Loading first path...")
+    # images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
+    # print("Preprocessing first path...")
+    # images1 = preprocess_images(images1, use_multiprocessing)
+    # print("Calculating activation statistics for first path...")
+    # mu1, sigma1 = calculate_activation_statistics(images1, batch_size)
+    activations = load_preprocess_get_activations_images(path1, max_images=max_images, total_max_images=total_max_images, batch_size=batch_size, use_multiprocessing=use_multiprocessing)
+    mu1, sigma1 = calculate_activation_statistics(activations)
+    # del images1
+    # print("Loading second path...")
+    # images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
+    # print("Preprocessing second path...")
+    # images2 = preprocess_images(images2, use_multiprocessing)
+    # print("Calculating activation statistics for second path...")
+    # mu2, sigma2 = calculate_activation_statistics(images2, batch_size)
+    activations = load_preprocess_get_activations_images(path2, max_images=max_images, total_max_images=total_max_images, batch_size=batch_size, use_multiprocessing=use_multiprocessing)
+    mu2, sigma2 = calculate_activation_statistics(activations)
+    # del images2
     print("Calculating FID...")
     fid = calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
     return fid

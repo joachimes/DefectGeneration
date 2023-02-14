@@ -4,6 +4,8 @@ from torchvision.utils import make_grid
 from models.mixNMatch_utils.train_first_stage import define_optimizers, load_network
 from models.mixNMatch_utils.utils import copy_G_params, CrossEntropy, cal_gradient_penalty, child_to_parent
 from models.train import LitTrainer
+# import garbage_collection_cuda from pytorch lightning
+from pytorch_lightning.utilities.memory import garbage_collection_cuda
 
 class MixNMatch(LitTrainer):
     def __init__(self, gan_cfg, bg_loss_wt, batch_size=8, num_defects=14, num_classes=8, **kwargs) -> None:
@@ -75,26 +77,58 @@ class MixNMatch(LitTrainer):
             self.combined_p = torch.cat([fixed_train_real_p[:16], fixed_val_real_p[:16]], dim=0)
             self.combined_c = torch.cat([fixed_train_real_c[:16], fixed_val_real_c[:16]], dim=0)
 
-        # Sample 
-        # fake_z2, _, _, _ = self.encoder( self.combined_z.to(self.device), 'softmax' )
-        # fake_z1, fake_b, _, _ = self.encoder( self.combined_b.to(self.device), 'softmax' )
-        # _, _, fake_p, _ = self.encoder( self.combined_p.to(self.device), 'softmax' )
-        # _, _, _, fake_c = self.encoder( self.combined_c.to(self.device), 'softmax' )    
-        
-        # fake_imgs, _, _, _ = self.netG(fake_z1, fake_z2, fake_c, fake_p,  fake_b, 'code' )
-        fake_imgs, _, _, _ = self.netG(self.combined_z, self.combined_z, self.combined_c, self.combined_p,  self.combined_b, 'code' )
+        fake_imgs, _, _, _ = self.netG(self.combined_z, self.combined_c, self.combined_p,  self.combined_b, 'code' )
 
         
-        grid = make_grid((fake_imgs[:16] + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'mmm/reconstructred_train', grid, self.global_step)
+        grid = make_grid(torch.clamp((fake_imgs[0][:16] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_train1', grid, self.global_step)
+        grid = make_grid(torch.clamp((fake_imgs[1][:16] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_train2', grid, self.global_step)
+        grid = make_grid(torch.clamp((fake_imgs[2][:16] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_train3', grid, self.global_step)
 
-        grid = make_grid((fake_imgs[:16] + 1) * 0.5, nrow=4)
-        self.logger.experiment.add_image(f'mmm/reconstructred_val', grid, self.global_step)
+        grid = make_grid(torch.clamp((fake_imgs[0][16:] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_val1', grid, self.global_step)
 
+        grid = make_grid(torch.clamp((fake_imgs[1][16:] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_val2', grid, self.global_step)
+
+        grid = make_grid(torch.clamp((fake_imgs[2][16:] + 1) * 0.5, min=0.0, max=1.0), nrow=4)
+        self.logger.experiment.add_image(f'mmm/reconstructred_val3', grid, self.global_step)
+
+
+    # def on_train_batch_start(self, batch, batch_idx):
+    #     del self.real_img126, self.real_img, self.real_z, self.real_b, self.real_p, self.real_c
+    #     del self.fake_z, self.fake_b, self.fake_p, self.fake_c
+    #     del self.fake_imgs, self.fg_imgs, self.mk_imgs, self.fg_mk
+        
+    #     real_img126, real_img, real_z, real_b, real_p, real_c = self.prepare_epoch_data(batch)
+    #     self.register_buffer('real_img126', real_img126)
+    #     self.register_buffer('real_img', real_img)
+    #     self.register_buffer('real_z', real_z)
+    #     self.register_buffer('real_b', real_b)
+    #     self.register_buffer('real_p', real_p)
+    #     self.register_buffer('real_c', real_c)
+
+    #     del real_img126, real_img, real_z, real_b, real_p, real_c
+
+    #     fake_z, fake_b, fake_p, fake_c = self.encoder( self.real_img, 'softmax' )
+    #     self.register_buffer('fake_z', fake_z)
+    #     self.register_buffer('fake_b', fake_b)
+    #     self.register_buffer('fake_p', fake_p)
+    #     self.register_buffer('fake_c', fake_c)
+
+        # del fake_z, fake_b, fake_p, fake_c
+        # fake_imgs, fg_imgs, mk_imgs, fg_mk = self.netG( self.real_z, self.real_c, self.real_p,  self.real_b, 'code' )
+        # self.register_buffer('fake_imgs', fake_imgs)
+        # self.register_buffer('fg_imgs', fg_imgs)
+        # self.register_buffer('mk_imgs', mk_imgs)
+        # self.register_buffer('fg_mk', fg_mk)
 
             
 
     def _common_step(self, batch, batch_idx, optimizer_idx=None):
+        # garbage_collection_cuda()
         # batch_imgs, *_ = batch
 
         d_opt, bd_opt, ge_opt = None, None, None
@@ -121,7 +155,7 @@ class MixNMatch(LitTrainer):
             print(f'logging samples at step {self.global_step}')
             self.log_samples()
 
-        return {f'GE_loss': GE_loss, f'BD_loss': bd_loss, f'd_loss_0': d_loss_0, f'd_loss_2': d_loss_2}
+        return {f'GE_loss': GE_loss.detach(), f'BD_loss': bd_loss.detach(), f'd_loss_0': d_loss_0.detach(), f'd_loss_2': d_loss_2.detach()}
         
 
     def training_epoch_end(self, outputs):
@@ -195,8 +229,6 @@ class MixNMatch(LitTrainer):
   
         # choose net and opt  
         netD = self.__getattr__(f'netD{idx}')
-        if d_opt:
-            d_opt[idx].zero_grad()
         # choose real and fake images
         if idx == 0:
             real_img = self.real_img126
@@ -268,16 +300,15 @@ class MixNMatch(LitTrainer):
             fake_prediction_loss = self.RF_loss(fake_prediction, fake_label)
             D_loss = real_prediction_loss+fake_prediction_loss
         if d_opt:
+            d_opt[idx].zero_grad()
             self.manual_backward(D_loss)
             d_opt[idx].step()
 
-        return D_loss
+        return D_loss.detach()
 
 
 
     def train_BD(self, bd_opt=None):
-        if bd_opt:
-            bd_opt.zero_grad()
 
         # make prediction on pairs 
         pred_enc_z, pred_enc_b, pred_enc_p, pred_enc_c = self.BD(  self.real_img, self.fake_z.detach(), self.fake_b.detach(), self.fake_p.detach(), self.fake_c.detach() )
@@ -289,16 +320,15 @@ class MixNMatch(LitTrainer):
 
         D_loss =  -( pred_enc_z.mean()+pred_enc_b.mean()+pred_enc_p.mean()+pred_enc_c.mean()  ) + ( pred_gen_z.mean()+pred_gen_b.mean()+pred_gen_p.mean()+pred_gen_c.mean() ) + penalty*10
         if bd_opt:
+            bd_opt.zero_grad()
             self.manual_backward(D_loss)
             bd_opt.step()
-        return D_loss
+        return D_loss.detach()
       
 
 
     def train_EG(self, ge_opt=None):
 
-        if ge_opt:
-            ge_opt.zero_grad()
 
         # reconstruct code and calculate loss 
         self.rec_p, _ = self.netD1( self.fg_mk[0])
@@ -334,7 +364,8 @@ class MixNMatch(LitTrainer):
         EG_loss =  (p_code_loss+c_code_loss) + (bg_rf_loss+bg_class_loss) + child_rf_loss + fool_BD_loss + (5*z_pred_loss+5*b_pred_loss+10*p_pred_loss+10*c_pred_loss)
         
         if ge_opt:
+            ge_opt.zero_grad()
             self.manual_backward(EG_loss)
             ge_opt.step()
 
-        return EG_loss
+        return EG_loss.detach()
