@@ -10,7 +10,7 @@ import sklearn.metrics
 from torch import nn
 from torchvision.models import vgg16
 
-from fid import preprocess_images, load_images, to_cuda
+from utils.fid import to_cuda, load_preprocess_get_activations_images, calculate_activation_statistics, calculate_frechet_distance
 
 __all__ = ['compute_prdc']
 
@@ -18,7 +18,7 @@ __all__ = ['compute_prdc']
 class PartialVGG16(nn.Module):
     def __init__(self, transform_input=True):
         super().__init__()
-        self.vgg16_net = vgg16(pretrained=False)
+        self.vgg16_net = vgg16(weights=None)
         self.vgg16_net.classifier = self.vgg16_net.classifier[:-1]
     
     def forward(self, x):
@@ -60,6 +60,9 @@ def get_features(images, batch_size):
         activations = activations.detach().cpu().numpy()
         assert activations.shape == (ims.shape[0], 4096), "Expexted output shape to be: {}, but was: {}".format((ims.shape[0], 4096), activations.shape)
         vgg16_features[start_idx:end_idx, :] = activations
+    # Remove vgg16 from memory
+    del vgg16
+    
     return vgg16_features
 
 
@@ -74,7 +77,7 @@ def compute_pairwise_distance(data_x, data_y=None):
     if data_y is None:
         data_y = data_x
     dists = sklearn.metrics.pairwise_distances(
-        data_x, data_y, metric='euclidean', n_jobs=8)
+        data_x, data_y, metric='euclidean')
     return dists
 
 
@@ -106,7 +109,7 @@ def compute_nearest_neighbour_distances(input_features, nearest_k):
 
 
 
-def compute_prdc(images1, images2, nearest_k, batch_size):
+def compute_prdc(path1, path2, use_multiprocessing, nearest_k, batch_size, max_images=10_000, total_max_images=None, shape=299):
     """
     Computes precision, recall, density, and coverage given two manifolds.
     Args:
@@ -116,20 +119,48 @@ def compute_prdc(images1, images2, nearest_k, batch_size):
     Returns:
         dict of precision, recall, density, and coverage.
     """
+    # print('Loading path1 images...')
+    # images1 = load_images(path1, max_images=max_images, total_max_images=total_max_images)
+    # print('Preprocessing path1 images...')
+    # images1 = preprocess_images(images1, use_multiprocessing=use_multiprocessing, shape=shape)
+    # print('Computing path1 features...')
+    # real_features = get_activations(images1, batch_size)
 
-    images1 = preprocess_images(images1, 224)
-    images2 = preprocess_images(images2, 224)
-    
-    real_features = get_features(images1, batch_size)
-    fake_features = get_features(images2, batch_size)
+    real_features = load_preprocess_get_activations_images(path1, max_images=max_images, total_max_images=total_max_images, use_multiprocessing=use_multiprocessing, shape=shape, batch_size=batch_size)
 
-    print('Num real: {} Num fake: {}'
-          .format(real_features.shape[0], fake_features.shape[0]))
+    # real_features = get_features(images1, batch_size)
+    # del images1
 
+    mu1, sigma1 = calculate_activation_statistics(real_features)
+
+
+
+    # print('Loading path2 images...')
+    # images2 = load_images(path2, max_images=max_images, total_max_images=total_max_images)
+    # print('Preprocessing path2 images...')
+    # images2 = preprocess_images(images2, use_multiprocessing=use_multiprocessing, shape=shape)
+    # print('Computing path2 features...')
+    # fake_features = get_activations(images2, batch_size)
+    fake_features = load_preprocess_get_activations_images(path2, max_images=max_images, total_max_images=total_max_images, use_multiprocessing=use_multiprocessing, shape=shape, batch_size=batch_size)
+    # fake_features = get_features(images2, batch_size)
+    # del images2
+    mu2, sigma2 = calculate_activation_statistics(fake_features)
+    fid = calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
+
+    print('Num real: {}'
+            .format(real_features.shape[0]))
+    print('Num fake: {}'
+          .format(fake_features.shape[0]))
+
+
+    print('Computing nearest neighbour distances...')
     real_nearest_neighbour_distances = compute_nearest_neighbour_distances(
         real_features, nearest_k)
+
+    print('Computing nearest neighbour distances...')
     fake_nearest_neighbour_distances = compute_nearest_neighbour_distances(
         fake_features, nearest_k)
+    print('Computing pairwise distances...')
     distance_real_fake = compute_pairwise_distance(
         real_features, fake_features)
 
@@ -154,7 +185,7 @@ def compute_prdc(images1, images2, nearest_k, batch_size):
     ).mean()
 
     return dict(precision=precision, recall=recall,
-                density=density, coverage=coverage)
+                density=density, coverage=coverage, fid=fid)
 
 
 
@@ -173,7 +204,7 @@ if __name__ == "__main__":
                       help="Set batch size to use for InceptionV3 network",
                       type=int)
                       
-    parser.add_option("-k", "--nearest-k-size", dest="Nearest Neighbour size",
+    parser.add_option("-k", "--nearest-k-size", dest="nearest_k_size",
                       help="Set neighbour size to use for KNN model",
                       type=int)
     
@@ -181,7 +212,6 @@ if __name__ == "__main__":
     assert options.path1 is not None, "--path1 is an required option"
     assert options.path2 is not None, "--path2 is an required option"
     assert options.batch_size is not None, "--batch_size is an required option"
-    images1 = load_images(options.path1)
-    images2 = load_images(options.path2)
-    fid_value = compute_prdc(images1, images2, options.nearest_k_size, options.batch_size)
+
+    fid_value = compute_prdc(options.path1, options.path2, options.use_multiprocessing, options.nearest_k_size, options.batch_size)
     print(fid_value)

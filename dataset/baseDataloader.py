@@ -11,7 +11,7 @@ from torch.utils.data import Dataset, WeightedRandomSampler
 
 
 class BaseVialLoader(Dataset):
-    def __init__(self, data_path, defects, camera, transform, setting='train', max_img_class=10_000, **kwargs) -> None:
+    def __init__(self, data_path, defects, camera, transform, setting='train', max_img_class=10_000, limit_real_amount=None, **kwargs) -> None:
         self.data_paths = self.__gen_data_path(data_path, defects, camera)
         self.transform = transform
         self.setting = setting
@@ -40,6 +40,9 @@ class BaseVialLoader(Dataset):
             for origin, versions in origin_list.items():
                 n_images = defects[defect][origin]['n_images']
                 n_total = versions.pop('n_img_total')
+                if limit_real_amount and setting == 'train' and origin == 'Real':
+                    print(f'limiting real amount for {defect} for origin {setting} {origin} to {int(limit_real_amount*n_images)} of the total {n_images}')
+                    n_images = int(limit_real_amount * n_images)
                 if n_images > n_total:
                     raise Exception("Number of images requested greater than total number of images")
                 for version in versions:

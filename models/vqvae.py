@@ -131,7 +131,7 @@ class VQModel(LitTrainer):
             grid = make_grid((self.fixed_val_imgs[:,:3] + 1) * 0.5, nrow=4)
             self.logger.experiment.add_image(f'vq_imgs/real_val', grid, 0)
             if self.fixed_train_imgs.shape[1] == 4:
-                grid = make_grid((torch.cat([self.fixed_train_imgs[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
+                grid = make_grid(torch.clamp((torch.cat([self.fixed_train_imgs[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, min=0.0, max=1.0), nrow=4)
                 self.logger.experiment.add_image(f'vq_imgs/real_label_train', grid, 0)
                 grid = make_grid((torch.cat([self.fixed_val_imgs[:, 3:] for _ in range(3)], dim=1) + 1) * 0.5, nrow=4)
                 self.logger.experiment.add_image(f'vq_imgs/real_label_val', grid, 0)

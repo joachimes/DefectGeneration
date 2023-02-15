@@ -14,6 +14,8 @@ def get_bbox_info(image_path):
     bbox_info = {}
     
     json_name = 'CocoVID.json' if 'Synthetic' in image_path else 'instances_default.json'
+    if '/' not in split[0]:
+        split[0] = f'/{split[0]}'
     try:
         with open(f'{os.path.join(*split[:-2])}/{json_name}', 'r') as f:
             data = json.load(f)
@@ -87,8 +89,8 @@ class VialNBBoxLoader(BaseVialLoader):
     def __getitem__(self, idx):
         defect_dict = self.img_paths[idx]
         
-        # d_image = self.TensorTransform(Image.open(defect_dict['path']).convert('RGB'))
-        d_image = self.transform(Image.open(defect_dict['path']).convert('RGB'), self.setting)
+        d_image = self.TensorTransform(Image.open(defect_dict['path']).convert('RGB'))
+        # d_image = self.transform(Image.open(defect_dict['path']).convert('RGB'), self.setting)
         
         label = torch.zeros((1, self.h, self.w))
         
@@ -96,15 +98,14 @@ class VialNBBoxLoader(BaseVialLoader):
         if bbox_points is not None:
             label[:, int(bbox_points[1]):int(bbox_points[1]+bbox_points[3]), int(bbox_points[0]):int(bbox_points[0]+bbox_points[2])] = 1
         
-        # d_combined = torch.cat([d_image, label], dim=0)
-        # d_combined = self.PilTransform(d_combined)
-        # d_combined = self.transform(d_combined, self.setting)
-        # d_image = d_combined[:3, :, :]
-        # d_label = d_combined[3:, :, :]
+        d_combined = torch.cat([d_image, label], dim=0)
+        d_combined = self.transform(d_combined, self.setting)
+        d_image = d_combined[:3, :, :]
+        d_label = d_combined[3:, :, :]
 
 
         # d_image = self.transform(self.PilTransform(d_image), self.setting)
-        d_label = self.transform(self.PilTransform(label), self.setting)
+        # d_label = self.transform(self.PilTransform(label), self.setting)
         
         d_type = self.defect_cat[defect_dict['type']]
         d_cat = self.defect_cat[defect_dict['type']]

@@ -1333,23 +1333,23 @@ class LatentDiffusion(DDPM):
                 self.val_mask_log = v_rest[0]
                 self.comb_mask = torch.cat([t_rest[0][:self.log_batch_size], v_rest[0][:self.log_batch_size]], dim=0)
                 self.xc_combined = {'c_concat': self.comb_mask.to(self.device), 'c_crossattn': self.xc_combined.to(self.device)}
-                grid = make_grid((self.train_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
+                grid = make_grid(torch.clamp((self.train_mask_log[:self.log_batch_size] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
                 self.logger.experiment.add_image(f'sd_imgs/real_mask', grid, 0)
-                grid = make_grid((self.val_mask_log[:self.log_batch_size] + 1) * 0.5, nrow=self.nrow)
+                grid = make_grid(torch.clamp((self.val_mask_log[:self.log_batch_size] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
                 self.logger.experiment.add_image(f'sd_imgs/val_mask', grid, 0)
             
             else:
                 self.xc_combined = self.xc_combined.to(self.device)
             self.xc_combined = self.get_learned_conditioning(self.xc_combined)
 
-            grid = make_grid((self.fixed_train_imgs[:, :3] + 1) * 0.5, nrow=self.nrow)
+            grid = make_grid(torch.clamp((self.fixed_train_imgs[:, :3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
             self.logger.experiment.add_image(f'sd_imgs/real_train', grid, 0)
-            grid = make_grid((self.fixed_val_imgs[:, :3] + 1) * 0.5, nrow=self.nrow)
+            grid = make_grid(torch.clamp((self.fixed_val_imgs[:, :3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
             self.logger.experiment.add_image(f'sd_imgs/real_val', grid, 0)
             if self.fixed_train_imgs.shape[1] == 4:
-                grid = make_grid((self.fixed_train_imgs[:, 3] + 1) * 0.5, nrow=self.nrow)
+                grid = make_grid(torch.clamp((self.fixed_train_imgs[:, 3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
                 self.logger.experiment.add_image(f'sd_imgs/real_label_train', grid, 0)
-                grid = make_grid((self.fixed_val_imgs[:, 3] + 1) * 0.5, nrow=self.nrow)
+                grid = make_grid(torch.clamp((self.fixed_val_imgs[:, 3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
                 self.logger.experiment.add_image(f'sd_imgs/real_label_val', grid, 0)
 
         with self.ema_scope("Plotting"):
@@ -1357,10 +1357,10 @@ class LatentDiffusion(DDPM):
             samples, _ = self.sample_log(cond=self.xc_combined,batch_size=self.log_batch_size*2,ddim=True,
                                                         ddim_steps=200,eta=1)
         x_samples = self.decode_first_stage(samples)
-        grid = make_grid((x_samples[:self.log_batch_size, :3] + 1) * 0.5, nrow=self.nrow)
+        grid = make_grid(torch.clamp((x_samples[:self.log_batch_size, :3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_train', grid, self.global_step)
 
-        grid = make_grid((x_samples[self.log_batch_size:, :3] + 1) * 0.5, nrow=self.nrow)
+        grid = make_grid(torch.clamp((x_samples[self.log_batch_size:, :3] + 1) * 0.5, min=0.0, max=1.0), nrow=self.nrow)
         self.logger.experiment.add_image(f'sd_imgs/reconstructred_val', grid, self.global_step)
         if self.accum_gradients:
             self.first_grad_accum = False

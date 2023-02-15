@@ -13,7 +13,8 @@ from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatc
 
 @hydra.main(version_base=None, config_path="config", config_name="classifier")
 def main(cfg: DictConfig) -> None:
-    seed_everything(42)
+    seed = cfg.state.seed if 'seed' in cfg.state else 42
+    seed_everything(seed)
     print(OmegaConf.to_yaml(cfg))
     print(cfg.dataset)
     
