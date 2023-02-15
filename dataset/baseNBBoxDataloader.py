@@ -30,8 +30,9 @@ def get_bbox_info(image_path):
 
 def iterate_all_folders_and_get_bbox_info(root_dir, camera, setting):
     bbox_info = {}
+    capital_setting = setting[0].upper() + setting[1:]
     for root, dirs, files in tqdm(os.walk(root_dir)):
-        if f'CAM{camera}' not in root or f'{os.sep}{setting}' not in root:
+        if f'CAM{camera}' not in root or (f'{os.sep}{setting}' not in root and f'{os.sep}synth{capital_setting}' not in root):
             continue
         for file in files:
             if file.endswith(".json"):
@@ -70,16 +71,18 @@ class VialNBBoxLoader(BaseVialLoader):
             categories[name] = i 
         for name, i in categories.items(): 
             self.categories[f'synthetic_{name}'] = i
-
+        num_bbox_found = 0
         for i in tqdm(range(len(self.img_paths))):
             if not keep_classes_together and 'Synthetic' in self.img_paths[i]['path']:
                 self.img_paths[i]['type'] = f"synthetic_{self.img_paths[i]['type']}"
             try:
                 self.img_paths[i]['bbox'] = self.bbox_dict[self.img_paths[i]['path']]
+                num_bbox_found += 1
             except:
                 self.img_paths[i]['bbox'] = None
             # self.img_paths[i]['bbox'] = get_bbox_info(self.img_paths[i]['path'])
-        print('done')
+
+        print(f'done - found {num_bbox_found} out of {len(self.bbox_dict)} bboxes')
                 
     def __getitem__(self, idx):
         defect_dict = self.img_paths[idx]
