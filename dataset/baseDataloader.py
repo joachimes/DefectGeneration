@@ -40,7 +40,7 @@ class BaseVialLoader(Dataset):
             for origin, versions in origin_list.items():
                 n_images = defects[defect][origin]['n_images']
                 n_total = versions.pop('n_img_total')
-                if limit_real_amount and setting == 'train' and origin == 'Real':
+                if limit_real_amount is not None and setting == 'train' and origin == 'Real':
                     print(f'limiting real amount for {defect} for origin {setting} {origin} to {int(limit_real_amount*n_images)} of the total {n_images}')
                     n_images = int(limit_real_amount * n_images)
                 if n_images > n_total:

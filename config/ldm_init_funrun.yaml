@@ -1,76 +1,90 @@
 state:
   mode: train
   load: False
-  # load_epoch: 49
-  version_hparams: [dataset_type, batch_size, img_size, channels]
+  load_epoch: 14
+  version_hparams:
+  - dataset_type
+  - batch_size
+  - img_size
+  - channels
   model_name: LatentDiffusion
   monitor: val/loss_simple_ema
-  save_last: True
-  gpu: [0]
-  precision: 
-
+  gpu:
+  - 0
+  save_last: true
+  gradient_accum: 8
+  precision: null
 model:
+  accum_gradients: true
   lr: 1.0e-06
   patience: 5
   max_epochs: 50
   num_defects: None
   defect_names: None
-
   linear_start: 0.0015
-  linear_end: 0.0195
+  linear_end: 0.0205
   num_timesteps_cond: 1
   log_every_t: 200
   timesteps: 1000
-  first_stage_key: 0
+  first_stage_key: image
   cond_stage_key: 2
-  image_size: 16
-  channels: 8
+  image_size: 32
+  channels: 4
   cond_stage_trainable: true
   conditioning_key: crossattn
   monitor: val/loss_epoch
-
   first_stage_config:
     first_stage_model: VQModelInterface
     n_embed: 16384
-    latent_dim: 8
-    ckpt_path: tb_logs/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Synthetic_generative_10_8_16384_15/model_epoch=46_val_loss=0.000.ckpt
+    latent_dim: 4
+    ckpt_path: tb_logs\VQModel_CAM2\dattyp_batsiz_latdim_nemb_numdef\Real_generative_9_4_16384_19\model_epoch=18_val_loss=0.000.ckpt
     AEcfg:
-      double_z: False
-      z_channels: 8
+      double_z: false
+      z_channels: 4
       img_size: 256
       channels: 3
       out_ch: 3
       init_dim: 128
-      dim_mult: [1, 1, 2, 2, 4]
+      dim_mult:
+      - 1
+      - 2
+      - 2
+      - 4
       num_res_blocks: 2
-      attn_resolutions: [16]
+      attn_resolutions:
+      - 32
       resnet_block_groups: 8
     losscfg: identity
   unet_config:
-    image_size: 16
-    in_channels: 8
-    out_channels: 8
+    image_size: 32
+    in_channels: 4
+    out_channels: 4
     model_channels: 256
-    attention_resolutions: [4, 2, 1]
+    attention_resolutions:
+    - 8
+    - 4
+    - 1
     num_res_blocks: 2
-    channel_mult: [1, 2, 4]
-    num_head_channels: 32
+    channel_mult:
+    - 1
+    - 2
+    - 3
+    - 4
+    num_head_channels: 8
     use_spatial_transformer: true
     transformer_depth: 1
+    resblock_updown: true
     context_dim: 9
   cond_stage_config:
     embed_dim: 9
     key: 2
-    n_classes:
-
+    n_classes: null
 dataset:
   data_path: /nn-seidenader-gentofte/TJSD/VisData
   camera: 2
   weighted_sampling: 1
   num_workers: 1
-  batch_size: 4
+  batch_size: 2
   img_size: 256
-  dataset_type: Synthetic_generative
-  transform:
-
-      
+  dataset_type: Real_generative
+  transform: null

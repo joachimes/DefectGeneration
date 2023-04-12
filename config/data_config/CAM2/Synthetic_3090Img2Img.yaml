@@ -156,6 +156,13 @@ test:
       - D
 train:
   B:
+    3090Img2Img:
+      category: A2
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2182
+      split: train
+      versions: []
     Synthetic:
       category: A2
       hash:
@@ -164,6 +171,13 @@ train:
       split: train
       versions: []
   CCD:
+    3090Img2Img:
+      category: A3
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: A3
       hash:
@@ -172,6 +186,13 @@ train:
       split: train
       versions: []
   CnC:
+    3090Img2Img:
+      category: A1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: A1
       hash:
@@ -180,6 +201,13 @@ train:
       split: train
       versions: []
   DIST:
+    3090Img2Img:
+      category: B2
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: B2
       hash:
@@ -189,6 +217,13 @@ train:
       split: train
       versions: []
   DPPST:
+    3090Img2Img:
+      category: D1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: D1
       hash:
@@ -197,6 +232,13 @@ train:
       split: train
       versions: []
   FCC:
+    3090Img2Img:
+      category: A2
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: A2
       hash:
@@ -205,6 +247,13 @@ train:
       split: train
       versions: []
   FOST:
+    3090Img2Img:
+      category: D1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: D1
       hash:
@@ -213,6 +262,13 @@ train:
       split: train
       versions: []
   GPST:
+    3090Img2Img:
+      category: D1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: D1
       hash:
@@ -222,6 +278,25 @@ train:
       split: train
       versions: []
   Good:
+    3090Img2Img:
+      category: Good
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 171870
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
     Synthetic:
       category: Good
       hash:
@@ -230,6 +305,13 @@ train:
       split: train
       versions: []
   MESM:
+    3090Img2Img:
+      category: B2
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: B2
       hash:
@@ -238,6 +320,13 @@ train:
       split: train
       versions: []
   MSF:
+    3090Img2Img:
+      category: B1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: B1
       hash:
@@ -246,6 +335,13 @@ train:
       split: train
       versions: []
   MST:
+    3090Img2Img:
+      category: B1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: B1
       hash:
@@ -254,6 +350,13 @@ train:
       split: train
       versions: []
   PST:
+    3090Img2Img:
+      category: G1
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: G1
       hash:
@@ -262,6 +365,13 @@ train:
       split: train
       versions: []
   SSNPDNeck:
+    3090Img2Img:
+      category: C2
+      hash:
+      - Real_Synthetic_5_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
     Synthetic:
       category: C2
       hash:

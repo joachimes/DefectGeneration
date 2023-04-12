@@ -1,0 +1,143 @@
+test:
+  CC:
+    Real:
+      category: F1
+      hash:
+      - current_version
+      n_images: 1680
+      split: test
+      versions:
+      - A
+      - B
+  DPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 724
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  GPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 210
+      split: test
+      versions:
+      - A
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 5310
+      split: test
+      versions:
+      - A
+  SPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 261
+      split: test
+      versions:
+      - A
+      - B
+      - C
+train:
+  CC:
+    Synthetic:
+      category: F1
+      hash:
+      - version4
+      n_images: 1000
+      split: train
+      versions: []
+  DPCake:
+    Synthetic:
+      category: D1
+      hash:
+      - version3
+      - version4
+      n_images: 11000
+      split: train
+      versions: []
+  GPCake:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - gpcake - 6cdb393
+      - v0.1 - main - 7ab7a05
+      - v0.1-gpcake-6c5d1ec
+      - version3
+      - version4
+      n_images: 20737
+      split: train
+      versions: []
+  SPCake:
+    Synthetic:
+      category: D1
+      hash:
+      - v0.1 - DPCakeShade - 932a0de
+      - version4
+      n_images: 13002
+      split: train
+      versions: []
+val:
+  CC:
+    Real:
+      category: F1
+      hash:
+      - current_version
+      n_images: 420
+      split: val
+      versions:
+      - A
+      - B
+  DPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 158
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  GPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 36
+      split: val
+      versions:
+      - A
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 5310
+      split: val
+      versions:
+      - A
+  SPCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 29
+      split: val
+      versions:
+      - A
+      - B
+      - C

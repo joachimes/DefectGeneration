@@ -228,13 +228,31 @@ def load_preprocess_get_activations_images(paths, max_images=10_000, total_max_i
     image_extensions = ["png", "jpg", 'jpeg']
     if isinstance(paths, str):
         paths = [paths]
+    defects_categories = {}
     for path in paths:
-        print("Looking for images in",path)
+        bla = path.split('CAM')[-1].split('/')[1]
+        if bla not in defects_categories:
+            defects_categories[bla] = []
+        defects_categories[bla].append(path)
+    for key in defects_categories:
+        print("Looking for images in",key)
+        category_paths = []
         for ext in image_extensions:
-            for idx, impath in enumerate(glob.glob(os.path.join(path, "*.{}".format(ext)))):
-                image_paths.append(impath)
+            for idx, impath in enumerate(glob.glob(os.path.join(defects_categories[key][0], "*.{}".format(ext)))):
+                category_paths.append(impath)
                 if idx >= max_images:
                     break
+        if len(category_paths) > max_images:
+            category_paths = np.random.choice(category_paths, max_images, replace=False).tolist()
+        image_paths += category_paths
+        
+    # for path in paths:
+    #     print("Looking for images in",path)
+    #     for ext in image_extensions:
+    #         for idx, impath in enumerate(glob.glob(os.path.join(path, "*.{}".format(ext)))):
+    #             image_paths.append(impath)
+    #             if idx >= max_images:
+    #                 break
     if isinstance(total_max_images, int) and len(image_paths) > total_max_images:
         image_paths = np.random.choice(image_paths, total_max_images, replace=False)
     

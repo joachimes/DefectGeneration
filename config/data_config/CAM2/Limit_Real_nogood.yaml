@@ -45,12 +45,14 @@ test:
       category: B2
       hash:
       - current_version
-      n_images: 493
+      n_images: 512
       split: test
       versions:
       - A
       - B
+      - C
       - E
+      - H
   DPPST:
     Real:
       category: D1
@@ -91,19 +93,6 @@ test:
       split: test
       versions:
       - A
-  Good:
-    Real:
-      category: Good
-      hash:
-      - current_version
-      n_images: 21720
-      split: test
-      versions:
-      - A
-      - B
-      - C
-      - D
-      - E
   MESM:
     Real:
       category: B2
@@ -118,10 +107,11 @@ test:
       category: B1
       hash:
       - current_version
-      n_images: 480
+      n_images: 510
       split: test
       versions:
       - A
+      - B
   MST:
     Real:
       category: B1
@@ -156,120 +146,159 @@ test:
       - D
 train:
   B:
-    Synthetic:
+    Real:
       category: A2
       hash:
-      - v0.1 - beak - fc348f8
-      n_images: 2264
+      - current_version
+      n_images: 1006
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
   CCD:
-    Synthetic:
+    Real:
       category: A3
       hash:
-      - v5
-      n_images: 2500
+      - current_version
+      n_images: 2372
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
   CnC:
-    Synthetic:
+    Real:
       category: A1
       hash:
-      - v0.1 - HEAD - 8d9eecd
-      n_images: 1000
+      - current_version
+      n_images: 1098
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
   DIST:
-    Synthetic:
+    Real:
       category: B2
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      - v0.1 - Reflectionfix - e565b93a
-      n_images: 2298
+      - current_version
+      n_images: 658
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
+      - E
+      - H
   DPPST:
-    Synthetic:
+    Real:
       category: D1
       hash:
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 4996
+      - current_version
+      n_images: 209
       split: train
-      versions: []
+      versions:
+      - A
+      - B
   FCC:
-    Synthetic:
+    Real:
       category: A2
       hash:
-      - v0.1 - A1A2merged - 8d9eecd
-      n_images: 1000
+      - current_version
+      n_images: 1193
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
   FOST:
-    Synthetic:
+    Real:
       category: D1
       hash:
-      - v0.1 - main - 3de6d5f2
-      n_images: 2000
+      - current_version
+      n_images: 1843
       split: train
-      versions: []
+      versions:
+      - A
+      - B
   GPST:
-    Synthetic:
+    Real:
       category: D1
       hash:
-      - v0.1 - gpst - 59f35e4
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 8093
+      - current_version
+      n_images: 217
       split: train
-      versions: []
+      versions:
+      - A
   Good:
-    Synthetic:
+    Real:
       category: Good
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      n_images: 1940
+      - current_version
+      n_images: 31980
       split: train
-      versions: []
+      versions:
+      - A
   MESM:
-    Synthetic:
+    Real:
       category: B2
       hash:
-      - v0.1 - FOSTfix - 3986acad
-      n_images: 2000
+      - current_version
+      n_images: 168
       split: train
-      versions: []
+      versions:
+      - A
   MSF:
-    Synthetic:
+    Real:
       category: B1
       hash:
-      - v0.1 - main - 8e82c19
-      n_images: 2000
+      - current_version
+      n_images: 570
       split: train
-      versions: []
+      versions:
+      - A
+      - B
   MST:
-    Synthetic:
+    Real:
       category: B1
       hash:
-      - v0.1 - FOSTfix - 3986acad
-      n_images: 1000
+      - current_version
+      n_images: 570
       split: train
-      versions: []
+      versions:
+      - A
   PST:
-    Synthetic:
+    Real:
       category: G1
       hash:
-      - v0.1 - main - 3de6d5f2
-      n_images: 1999
+      - current_version
+      n_images: 307
       split: train
-      versions: []
+      versions:
+      - A
+      - B
+      - C
+      - D
   SSNPDNeck:
-    Synthetic:
+    Real:
       category: C2
       hash:
-      - v0.1 - SSNPDCake - 2b02fc5
-      - v0.1 - SSNPDCake - 700e8ce
-      n_images: 3037
+      - current_version
+      n_images: 270
       split: train
-      versions: []
+      versions:
+      - A
+      - C
+      - D
 val:
   B:
     Real:
@@ -322,7 +351,9 @@ val:
       versions:
       - A
       - B
+      - C
       - E
+      - H
   DPPST:
     Real:
       category: D1
@@ -394,6 +425,7 @@ val:
       split: val
       versions:
       - A
+      - B
   MST:
     Real:
       category: B1

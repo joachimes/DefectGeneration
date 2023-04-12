@@ -30,9 +30,9 @@ def generate_sets(path:str, master_dict:dict, origins:list, cam:int, def_dict:di
                 version = [path_split[-1]] if raiser == 1 else []
                 current_path_split = path_split[-1-raiser]
                 # check if filenames include .json
-                json_file = [f for f in filenames if f.endswith('.json')]
-                if len(json_file) == 0 and gen_sets == ['train'] and folder_class != 'Good':
-                    continue
+                # json_file = [f for f in filenames if f.endswith('.json')]
+                # if len(json_file) == 0 and gen_sets == ['train'] and folder_class != 'Good':
+                    # continue
                 for split in gen_sets:
                     set_path = dirpath.replace(current_path_split, split)
                     if split != current_path_split:
@@ -61,7 +61,7 @@ def add_real_good(path:str, master_dict:dict, cam:int, def_dict:dict):
             master_dict = fill_dict(len_vis_txt, folder_class, git_hash, version, master_dict, split, target_origin, def_dict)
     return master_dict
 
-def read_files(path:str, def_dict:dict, cam:int, origins:list):
+def read_files(path:str, def_dict:dict, cam:int, origins:list, limit_real:bool=False):
     master_dict = {'train':{}, 'val':{}, 'test':{}}
 
     master_dict = generate_sets(path, master_dict, ['Real'], cam, def_dict, gen_sets=['val', 'test'])
@@ -92,20 +92,29 @@ def read_files(path:str, def_dict:dict, cam:int, origins:list):
                             master_dict['test'].pop(folder_class)
                         break
 
+    if limit_real:
+        for folder_class in list(master_dict['train']):
+            for origin in list(master_dict['train'][folder_class]):
+                if origin == 'Synthetic':
+                    master_dict['train'][folder_class].pop(origin)
+        # remove synthetic from origins list
+        origins = [o for o in origins if o != 'Synthetic']
                     
     if not osp.exists(f'config{os.sep}data_config{os.sep}CAM{cam}'):
         os.makedirs(f'config{os.sep}data_config{os.sep}CAM{cam}')
-    dest_path = osp.join('config','data_config',f'CAM{cam}',f'{"_".join(origins)}_bbox.yaml')
+    dest_path = osp.join('config','data_config',f'CAM{cam}',f'{"_".join(origins)}_pure.yaml')
     with open(dest_path, 'w') as outfile:
         yaml.dump(master_dict, outfile, default_flow_style=False)
 
 if __name__ == '__main__':
     origins_combinations = [ ['Diffusion'], ['Diffusion', 'Real', 'Synthetic'], ['Diffusion', 'Real'], ['Diffusion', 'Synthetic']]
-    origins_combinations = [['Synthetic'], ['Real', 'Synthetic']]
-    # origins_combinations =[ ['Synthetic']]
+    # origins_combinations = [['Synthetic'], ['Real', 'Synthetic']]
+    # origins_combinations = [['3090Img2Img'], ['Synthetic', '3090Img2Img'], ['synth2real']]
+    # origins_combinations =[ ['Real', 'DiffusionImg2Img']]
+    origins_combinations =[ ['Synthetic']]
     # iterate over all wanted combinations of origins
     for origins in origins_combinations: 
-        for cam in [2]:#,3,5,6]:
+        for cam in [3,5,6]:
 
             path = '/nn-seidenader-gentofte/TJSD/VisData'
             

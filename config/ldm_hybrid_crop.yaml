@@ -37,7 +37,7 @@ model:
     first_stage_model: VQModelInterface
     n_embed: 16384
     latent_dim: 3
-    ckpt_path: tb_logs/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Real_Synthetic_10_3_16384_14/model_epoch=48_val_loss=0.000.ckpt
+    ckpt_path: tb_new/VQModel_CAM2/dattyp_batsiz_latdim_nemb_numdef/Real_Synthetic_10_3_16384_14/model_epoch=48_val_loss=0.000.ckpt
     AEcfg:
       double_z: False
       z_channels: 3

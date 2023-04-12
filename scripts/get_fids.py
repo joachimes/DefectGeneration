@@ -31,7 +31,7 @@ def get_fids(base_path, sources):
         print(source1_paths[:3])
         
         print(source2_paths[:3])
-        ret_prdc = compute_prdc(source1_paths, source2_paths, use_multiprocessing=False, batch_size=32, nearest_k=5, max_images=5000, total_max_images=50000)
+        ret_prdc = compute_prdc(source1_paths, source2_paths, use_multiprocessing=False, batch_size=2, nearest_k=5, max_images=5000, total_max_images=50000)
         result = {}
         print(ret_prdc)
         for key, value in ret_prdc.items():

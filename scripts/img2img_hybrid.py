@@ -22,7 +22,7 @@ from models import LatentDiffusion
 from main import fill_none
 from models.ldm_utils.ddim import DDIMSampler
 
-@hydra.main(version_base=None, config_path="../config", config_name="ldm_hybrid_crop")
+@hydra.main(version_base=None, config_path="../config", config_name="ldm_hybrid")
 def main(cfg: DictConfig) -> None:
     seed_everything(42)
     print(OmegaConf.to_yaml(cfg))
@@ -37,7 +37,7 @@ def main(cfg: DictConfig) -> None:
     fill_none(cfg)
     defects_names = dm.defect_names
 
-    log_folder = 'tb_new'
+    log_folder = 'tb_logs'
     model_name = f"{cfg.state.model_name}_CAM{cfg.dataset.camera}"
     
     get_first_letters = lambda hparam: ''.join([word[:3] for word in hparam.split('_')])
@@ -69,6 +69,8 @@ def main(cfg: DictConfig) -> None:
 def make_batch(image, bbox, shape, device):
     if image != None:
         image = np.array(Image.open(image))
+        # resize image using numpy
+        image = np.array(Image.fromarray(image).resize(shape, Image.BILINEAR))
         image = image.astype(np.float32)/255.0
         image = image[None].transpose(0,3,1,2)
         image = torch.from_numpy(image)
@@ -77,8 +79,10 @@ def make_batch(image, bbox, shape, device):
     
     if bbox is not None:
         bbox_points = bbox
-        label = torch.zeros((1, 1, shape[0], shape[1]))
+        label = torch.zeros((1, 1, 448, 512))
         label[:, :, int(bbox_points[1]):int(bbox_points[1]+bbox_points[3]), int(bbox_points[0]):int(bbox_points[0]+bbox_points[2])] = 1
+        # resize label to 256x256 using torch
+        label = torch.nn.functional.interpolate(label, size=shape, mode='nearest')
     else:
         label = torch.zeros((1, 1, image.shape[2], image.shape[3]))
     batch = {"image": image, "mask": label}
@@ -110,15 +114,18 @@ def iterate_all_folders_and_get_bbox_info(root_dir, camera=2, setting='train'):
 
       
 
-def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=2, steps=49, n_row=2):
+def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=8, steps=49, n_row=2,eta=0.0, scale=1.0, strength=0.8):
     device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
     sampler = DDIMSampler(model)
-    outdir = f'/nn-seidenader-gentofte/TJSD/VisData/DiffusionImg2Img/CAM{cfg.dataset.camera}'
+    outdir = f'/nn-seidenader-gentofte/TJSD/VisData/3090Img2Img/CAM{cfg.dataset.camera}'
     
-    img_shape = (448,512)
+    img_shape = (256,256)
     latent_img_shape = img_shape
     spatial_multiplier = model.spatial_cond_stage_model.multiplier
+    
+    sampler = DDIMSampler(model)
+    sampler.make_schedule(ddim_num_steps=steps, ddim_eta=eta, verbose=False)
     for _ in range(model.spatial_cond_stage_model.n_stages):
         latent_img_shape = (latent_img_shape[0]* spatial_multiplier, latent_img_shape[1]*spatial_multiplier)
     with torch.no_grad():
@@ -128,15 +135,17 @@ def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=2
                 
                 # iterate over all folders in indir
                 for defect_name in sorted(os.listdir(indir)):
-                    if defect_name in ['B', 'CCD', 'Dist', 'DPPST', 'FOST', 'GPST', 'MESM', 'MSF']:
+                    if defect_name in ['B', 'CCD']:
                         continue
                     images=None
-
                     bbox_info = iterate_all_folders_and_get_bbox_info(osp.join(indir, defect_name))
+
                     if len(bbox_info.keys()) == 0:
                         print(f'No bbox info for {defect_name}')
                         images = glob(osp.join(indir, defect_name, '**', '**', 'images', '*'))
                         images = np.random.choice(images, num_images, replace=True)
+
+                        # continue
                     
                     print(f'Sampling defect {defect_name}')
                     try:
@@ -158,7 +167,6 @@ def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=2
                         img_batch = torch.zeros((batch_size, 3, img_shape[0], img_shape[1])).to(device)
 
                         # pick a random sample of keys from bbox_info using numpy
-                        # bboxes_coordinates = np.random.choice(list(bbox_info.keys()), size=batch_size, replace=False)
                         if images is None:
                             bboxes_coordinates = np.random.choice(list(bbox_info.keys()), size=batch_size, replace=False)
                         else:    
@@ -166,7 +174,8 @@ def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=2
 
 
                         for j, path in enumerate(bboxes_coordinates):
-                            
+                            if images is not None:
+                                path = images[i+j]
                             bbox_input = bbox_info[path] if images is None else None
                             output = make_batch(path, bbox_input, img_shape, device)
                             batch['c_concat'][j] = output['mask']
@@ -176,29 +185,42 @@ def sample(cfg, model, defect_info, model_version, num_images=2000, batch_size=2
                         # encode masked image and concat downsampled mask
                         x0 = model.first_stage_model.encode(img_batch)
                         n_row = min(x0.shape[0], n_row)
-                        t = repeat(torch.tensor([steps]), '1 -> b', b=n_row)
-
-                        t = t.to(device).long()
                         noise = torch.randn_like(x0)
-                        x_T = model.q_sample(x_start=x0, t=t, noise=noise)
-                        
-                        latent_shape = (cfg.model.channels, latent_img_shape[0], latent_img_shape[1])
+
+                        # latent_shape = (cfg.model.channels, latent_img_shape[0], latent_img_shape[1])
                         batch_input = model.get_learned_conditioning(batch)
-                        x = [0.0, 0.4, 0.6, 0.8, 0.9]
-                        eta = np.random.choice(x)
-                        samples, _ = sampler.sample(S=steps, batch_size=batch_size, shape=latent_shape
-                                                    , conditioning=batch_input, verbose=False, x_T=x_T, eta=eta)
+
+                        uc = None
+
+                        t_strength = np.random.choice(np.linspace(0.02,0.9, 20))
+                        t_enc = int(t_strength * steps)
+                        # encode (scaled latent)
+                        z_enc = sampler.stochastic_encode(x0, torch.tensor([t_enc]*batch_size).to(device), noise=noise)
+                        # decode it
+                        samples = sampler.decode(z_enc, batch_input, t_enc, unconditional_guidance_scale=scale,
+                                                unconditional_conditioning=uc,)
                         samples = model.decode_first_stage(samples)
                         samples = torch.clamp((samples+1.0)/2.0,min=0.0, max=1.0)
                         samples = samples.cpu().numpy().transpose(0,2,3,1) * 255
+                        for j in range(i, i+batch_size):
+                            # fill out trailing zeros
+                            iterp = str(t_strength)[:4]
+                            iterp = iterp + '0'*(4-len(iterp))
+
+                            Image.fromarray(samples[j%batch_size].astype(np.uint8)).save(osp.join(outpath, f'{j:04d}_{iterp}.jpg'))
+                            
+
+
+                        # samples, _ = sampler.sample(S=steps, batch_size=batch_size, shape=latent_shape
+                                                    # , conditioning=batch_input, verbose=False, x_T=x_T, eta=eta)
                         bbox_masks_out = torch.clamp((bbox_masks+1.0)/2.0,min=0.0, max=1.0)
                         bbox_masks_out = bbox_masks_out.cpu().numpy().transpose(0,2,3,1) * 255
                         img_batch_out = torch.clamp((img_batch+1.0)/2.0,min=0.0, max=1.0)
                         img_batch_out = img_batch_out.cpu().numpy().transpose(0,2,3,1) * 255
                         for j in range(i, i+batch_size):
-                            Image.fromarray(np.concatenate([bbox_masks_out[j%batch_size].astype(np.uint8),bbox_masks_out[j%batch_size].astype(np.uint8),bbox_masks_out[j%batch_size].astype(np.uint8)],axis=2)).save(osp.join(label_path, f'{defect_name}_{j:04d}_label.jpg'))
-                            Image.fromarray(samples[j%batch_size].astype(np.uint8)).save(osp.join(outpath, f'{defect_name}_{j:04d}_{eta}.jpg'))
-                            Image.fromarray(img_batch_out[j%batch_size].astype(np.uint8)).save(osp.join(cond_img_path, f'{defect_name}_{j:04d}.jpg'))
+                            # Image.fromarray(samples[j%batch_size].astype(np.uint8)).save(osp.join(outpath, f'{j:04d}_{eta}.jpg'))
+                            Image.fromarray(np.concatenate([bbox_masks_out[j%batch_size].astype(np.uint8),bbox_masks_out[j%batch_size].astype(np.uint8),bbox_masks_out[j%batch_size].astype(np.uint8)],axis=2)).save(osp.join(label_path, f'{j:04d}_label.jpg'))
+                            Image.fromarray(img_batch_out[j%batch_size].astype(np.uint8)).save(osp.join(cond_img_path, f'{j:04d}.jpg'))
                             print(f'Saved image {j:04d}.jpg')
 
 

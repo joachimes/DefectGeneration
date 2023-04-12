@@ -156,118 +156,127 @@ test:
       - D
 train:
   B:
-    Synthetic:
+    synth2real:
       category: A2
       hash:
-      - v0.1 - beak - fc348f8
-      n_images: 2264
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   CCD:
-    Synthetic:
+    synth2real:
       category: A3
       hash:
-      - v5
-      n_images: 2500
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   CnC:
-    Synthetic:
+    synth2real:
       category: A1
       hash:
-      - v0.1 - HEAD - 8d9eecd
-      n_images: 1000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   DIST:
-    Synthetic:
+    synth2real:
       category: B2
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      - v0.1 - Reflectionfix - e565b93a
-      n_images: 2298
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   DPPST:
-    Synthetic:
+    synth2real:
       category: D1
       hash:
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 4996
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   FCC:
-    Synthetic:
+    synth2real:
       category: A2
       hash:
-      - v0.1 - A1A2merged - 8d9eecd
-      n_images: 1000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   FOST:
-    Synthetic:
+    synth2real:
       category: D1
       hash:
-      - v0.1 - main - 3de6d5f2
-      n_images: 2000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   GPST:
-    Synthetic:
+    synth2real:
       category: D1
       hash:
-      - v0.1 - gpst - 59f35e4
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 8093
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   Good:
-    Synthetic:
+    Real:
       category: Good
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      n_images: 1940
+      - current_version
+      n_images: 171870
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+    synth2real:
+      category: Good
+      hash:
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   MESM:
-    Synthetic:
+    synth2real:
       category: B2
       hash:
-      - v0.1 - FOSTfix - 3986acad
-      n_images: 2000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   MSF:
-    Synthetic:
+    synth2real:
       category: B1
       hash:
-      - v0.1 - main - 8e82c19
-      n_images: 2000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   MST:
-    Synthetic:
+    synth2real:
       category: B1
       hash:
-      - v0.1 - FOSTfix - 3986acad
-      n_images: 1000
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   PST:
-    Synthetic:
+    synth2real:
       category: G1
       hash:
-      - v0.1 - main - 3de6d5f2
-      n_images: 1999
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
   SSNPDNeck:
-    Synthetic:
+    synth2real:
       category: C2
       hash:
-      - v0.1 - SSNPDCake - 2b02fc5
-      - v0.1 - SSNPDCake - 700e8ce
-      n_images: 3037
+      - Synthetic_generative_32_256_8_15
+      n_images: 3300
       split: train
       versions: []
 val:

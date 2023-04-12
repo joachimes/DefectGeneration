@@ -185,7 +185,7 @@ def compute_prdc(path1, path2, use_multiprocessing, nearest_k, batch_size, max_i
     ).mean()
 
     return dict(precision=precision, recall=recall,
-                density=density, coverage=coverage, fid=fid)
+                density=density, coverage=coverage, fid=fid, source1=real_features.shape[0], source2=fake_features.shape[0])
 
 
 

@@ -15,8 +15,8 @@ from models import Efficientnet, DiffusionNet, ConditionalDiffusionNet, MixNMatc
 def main(cfg: DictConfig) -> None:
     seed = cfg.state.seed if 'seed' in cfg.state else 42
     seed_everything(seed)
-    print(OmegaConf.to_yaml(cfg))
-    print(cfg.dataset)
+    # print(OmegaConf.to_yaml(cfg))
+    # print(cfg.dataset)
     
     dm = VialDataModule(**cfg.dataset)
     for category_attribute in ['num_classes', 'num_defects', 'class_names', 'defect_names']:

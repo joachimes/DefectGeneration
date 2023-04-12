@@ -1,0 +1,195 @@
+test:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 509
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 421
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  DPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 540
+      split: test
+      versions:
+      - A
+  GPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 262
+      split: test
+      versions:
+      - A
+      - B
+      - C
+      - D
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3630
+      split: test
+      versions:
+      - A
+  SPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 358
+      split: test
+      versions:
+      - A
+      - B
+train:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 562
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 566
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+  DPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 630
+      split: train
+      versions:
+      - A
+  GPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 339
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 28919
+      split: train
+      versions:
+      - A
+  SPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 400
+      split: train
+      versions:
+      - A
+      - B
+val:
+  ChipB:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 120
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  CrackAtFD:
+    Real:
+      category: C1
+      hash:
+      - current_version
+      n_images: 107
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  DPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 120
+      split: val
+      versions:
+      - A
+  GPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 51
+      split: val
+      versions:
+      - A
+      - B
+      - C
+      - D
+  Good:
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 3630
+      split: val
+      versions:
+      - A
+  SPBotCake:
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 60
+      split: val
+      versions:
+      - A
+      - B

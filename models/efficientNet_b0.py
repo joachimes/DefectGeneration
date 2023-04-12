@@ -20,6 +20,7 @@ class Efficientnet(LitTrainer):
         self.test_auc = tm.AUROC(num_classes=num_classes, average='macro', task='multiclass')
         self.test_prec = tm.Precision(num_classes=num_classes, average='macro', task='multiclass')
         self.test_recall = tm.Recall(num_classes=num_classes, average='macro', task='multiclass')
+        self.test_avgPrec = tm.AveragePrecision(num_classes=num_classes, average='macro', task='multiclass')
 
         self.save_hyperparameters(ignore=[
             'feature_extract'

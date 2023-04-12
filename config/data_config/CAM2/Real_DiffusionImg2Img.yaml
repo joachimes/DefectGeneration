@@ -156,120 +156,258 @@ test:
       - D
 train:
   B:
-    Synthetic:
+    DiffusionImg2Img:
       category: A2
       hash:
-      - v0.1 - beak - fc348f8
-      n_images: 2264
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 1006
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
   CCD:
-    Synthetic:
+    DiffusionImg2Img:
       category: A3
       hash:
-      - v5
-      n_images: 2500
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: A3
+      hash:
+      - current_version
+      n_images: 2372
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      - G
+      - H
+      - I
   CnC:
-    Synthetic:
+    DiffusionImg2Img:
       category: A1
       hash:
-      - v0.1 - HEAD - 8d9eecd
-      n_images: 1000
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: A1
+      hash:
+      - current_version
+      n_images: 1098
+      split: train
+      versions:
+      - A
+      - B
+      - C
   DIST:
-    Synthetic:
+    DiffusionImg2Img:
       category: B2
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      - v0.1 - Reflectionfix - e565b93a
-      n_images: 2298
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 4000
       split: train
       versions: []
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 658
+      split: train
+      versions:
+      - A
+      - B
+      - E
   DPPST:
-    Synthetic:
+    DiffusionImg2Img:
       category: D1
       hash:
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 4996
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 209
+      split: train
+      versions:
+      - A
+      - B
   FCC:
-    Synthetic:
+    DiffusionImg2Img:
       category: A2
       hash:
-      - v0.1 - A1A2merged - 8d9eecd
-      n_images: 1000
-      split: train
-      versions: []
-  FOST:
-    Synthetic:
-      category: D1
-      hash:
-      - v0.1 - main - 3de6d5f2
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
       n_images: 2000
       split: train
       versions: []
-  GPST:
-    Synthetic:
+    Real:
+      category: A2
+      hash:
+      - current_version
+      n_images: 1193
+      split: train
+      versions:
+      - A
+      - B
+      - C
+  FOST:
+    DiffusionImg2Img:
       category: D1
       hash:
-      - v0.1 - gpst - 59f35e4
-      - v0.1 - NewParticleStopper - 0466cf31
-      n_images: 8093
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 1843
+      split: train
+      versions:
+      - A
+      - B
+  GPST:
+    DiffusionImg2Img:
+      category: D1
+      hash:
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
+      split: train
+      versions: []
+    Real:
+      category: D1
+      hash:
+      - current_version
+      n_images: 217
+      split: train
+      versions:
+      - A
   Good:
-    Synthetic:
+    DiffusionImg2Img:
       category: Good
       hash:
-      - v0.1 - HEAD - 2b9ac9c
-      n_images: 1940
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: Good
+      hash:
+      - current_version
+      n_images: 171870
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
+      - E
   MESM:
-    Synthetic:
+    DiffusionImg2Img:
       category: B2
       hash:
-      - v0.1 - FOSTfix - 3986acad
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
       n_images: 2000
       split: train
       versions: []
+    Real:
+      category: B2
+      hash:
+      - current_version
+      n_images: 168
+      split: train
+      versions:
+      - A
   MSF:
-    Synthetic:
+    DiffusionImg2Img:
       category: B1
       hash:
-      - v0.1 - main - 8e82c19
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 816
+      split: train
+      versions: []
+    Real:
+      category: B1
+      hash:
+      - current_version
+      n_images: 570
+      split: train
+      versions:
+      - A
+  MST:
+    DiffusionImg2Img:
+      category: B1
+      hash:
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
       n_images: 2000
       split: train
       versions: []
-  MST:
-    Synthetic:
+    Real:
       category: B1
       hash:
-      - v0.1 - FOSTfix - 3986acad
-      n_images: 1000
+      - current_version
+      n_images: 570
       split: train
-      versions: []
+      versions:
+      - A
   PST:
-    Synthetic:
+    DiffusionImg2Img:
       category: G1
       hash:
-      - v0.1 - main - 3de6d5f2
-      n_images: 1999
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: G1
+      hash:
+      - current_version
+      n_images: 307
+      split: train
+      versions:
+      - A
+      - B
+      - C
+      - D
   SSNPDNeck:
-    Synthetic:
+    DiffusionImg2Img:
       category: C2
       hash:
-      - v0.1 - SSNPDCake - 2b02fc5
-      - v0.1 - SSNPDCake - 700e8ce
-      n_images: 3037
+      - Real_Synthetic_16_3_32_hybrid_28_img2img_steps=49_funfun
+      n_images: 2000
       split: train
       versions: []
+    Real:
+      category: C2
+      hash:
+      - current_version
+      n_images: 270
+      split: train
+      versions:
+      - A
+      - C
+      - D
 val:
   B:
     Real:
